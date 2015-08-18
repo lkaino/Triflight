@@ -150,6 +150,7 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT + 1] = {
     { BOXAIRMODE, "AIR MODE;", 28 },
     { BOX3DDISABLESWITCH, "DISABLE 3D SWITCH;", 29},
     { BOXFPVANGLEMIX, "FPV ANGLE MIX;", 30},
+    { BOXTAILTUNE, "TAIL TUNE;", 31},
     { CHECKBOX_ITEM_COUNT, NULL, 0xFF }
 };
 
@@ -414,6 +415,11 @@ void initActiveBoxIds(void)
         activeBoxIds[activeBoxIdCount++] = BOXSERVO3;
     }
 #endif
+
+    if (triMixerInUse())
+    {
+        activeBoxIds[activeBoxIdCount++] = BOXTAILTUNE;
+    }
 }
 
 #define IS_ENABLED(mask) (mask == 0 ? 0 : 1)
@@ -449,7 +455,8 @@ static uint32_t packFlightModeFlags(void)
         IS_ENABLED(FLIGHT_MODE(FAILSAFE_MODE)) << BOXFAILSAFE |
         IS_ENABLED(IS_RC_MODE_ACTIVE(BOXAIRMODE)) << BOXAIRMODE |
         IS_ENABLED(IS_RC_MODE_ACTIVE(BOXANTIGRAVITY)) << BOXANTIGRAVITY |
-        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXFPVANGLEMIX)) << BOXFPVANGLEMIX;
+        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXFPVANGLEMIX)) << BOXFPVANGLEMIX |
+        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXTAILTUNE)) << BOXTAILTUNE;
 
     uint32_t ret = 0;
     for (int i = 0; i < activeBoxIdCount; i++) {

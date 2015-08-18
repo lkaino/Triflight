@@ -119,6 +119,7 @@ struct rxConfig_s;
 
 uint8_t getMotorCount();
 float getMotorMixRange();
+bool mixerIsOutputSaturated(int axis, float errorRate);
 
 void mixerUseConfigs(
         flight3DConfig_t *flight3DConfigToUse,

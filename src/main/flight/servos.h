@@ -105,7 +105,6 @@ typedef struct servoParam_s {
 } __attribute__ ((__packed__)) servoParam_t;
 
 typedef struct servoMixerConfig_s{
-    uint8_t tri_unarmed_servo;              // send tail servo correction pulses even when unarmed
     uint16_t servo_lowpass_freq;             // lowpass servo filter frequency selection; 1/1000ths of loop freq
     int8_t servo_lowpass_enable;            // enable/disable lowpass filter
 } servoMixerConfig_t;

@@ -37,15 +37,22 @@
 #include "flight/pid.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
+#include "flight/mixer_tricopter.h"
 #include "flight/navigation.h"
 
 #include "sensors/gyro.h"
 #include "sensors/acceleration.h"
 
+//! Integrator is disabled when rate error exceeds this limit
+#define LUXFLOAT_INTEGRATOR_TRI_YAW_DISABLE_LIMIT_DPS (75.0f)
+
 uint32_t targetPidLooptime;
 static bool pidStabilisationEnabled;
+static bool disableTPAForYaw = false;
 
 float axisPID_P[3], axisPID_I[3], axisPID_D[3];
+
+static float expectedGyroError[3] = {0.0f};
 
 static float dT;
 
@@ -68,9 +75,19 @@ void pidSetItermAccelerator(float newItermAccelerator) {
     itermAccelerator = newItermAccelerator;
 }
 
+void pidResetErrorGyroAxis(flight_dynamics_index_t axis)
+{
+    axisPID_I[axis] = 0.0f;
+}
+
 void pidStabilisationState(pidStabilisationState_e pidControllerState)
 {
     pidStabilisationEnabled = (pidControllerState == PID_STABILISATION_ON) ? true : false;
+}
+
+float getdT()
+{
+    return dT;
 }
 
 const angle_index_t rcAliasToAngleIndexMap[] = { AI_ROLL, AI_PITCH };
@@ -165,6 +182,8 @@ void pidInitConfig(const pidProfile_t *pidProfile) {
     maxVelocity[FD_YAW] = pidProfile->yawRateAccelLimit * 1000 * dT;
     ITermWindupPoint = (float)pidProfile->itermWindupPointPercent / 100.0f;
     ITermWindupPointInv = 1.0f / (1.0f - ITermWindupPoint);
+
+    disableTPAForYaw = triMixerInUse();
 }
 
 static float calcHorizonLevelStrength(void) {
@@ -238,22 +257,32 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
         // b = 1 and only c (dtermSetpointWeight) can be tuned (amount derivative on measurement or error).
 
         // -----calculate error rate
-        const float errorRate = currentPidSetpoint - gyroRate;       // r - y
+        const float errorRate = currentPidSetpoint - gyroRate + expectedGyroError[axis];       // r - y
 
         // -----calculate P component and add Dynamic Part based on stick input
-        axisPID_P[axis] = Kp[axis] * errorRate * tpaFactor;
+        axisPID_P[axis] = Kp[axis] * errorRate;
         if (axis == FD_YAW) {
+            if (!disableTPAForYaw) {
+                axisPID_P[axis] *=  tpaFactor;
+            }
             axisPID_P[axis] = ptermYawFilterApplyFn(ptermYawFilter, axisPID_P[axis]);
+        }
+        else
+        {
+            axisPID_P[axis] *=  tpaFactor;
         }
 
         // -----calculate I component
-        if (motorMixRange < 1.0f) {
-            // Only increase ITerm if motor output is not saturated
-            axisPID_I[axis] += Ki[axis] * errorRate * dT * dynKi * itermAccelerator;
+        const float ITerm = axisPID_I[axis];
+        const float ITermNew = ITerm + Ki[axis] * errorRate * dT * dynKi * itermAccelerator;
+        const bool outputSaturated = mixerIsOutputSaturated(axis, errorRate);
+        if (outputSaturated == false || ABS(ITermNew) < ABS(ITerm)) {
+            // Only increase ITerm if output is not saturated
+            axisPID_I[axis] = ITermNew;
         }
 
         // -----calculate D component
-        if (axis != FD_YAW) {
+        if ((axis != FD_YAW) || triMixerInUse()) {
             float dynC = dtermSetpointWeight;
             if (pidProfile->setpointRelaxRatio < 100) {
                 dynC *= MIN(getRcDeflectionAbs(axis) * relaxFactor, 1.0f);
@@ -278,4 +307,8 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
             axisPID_D[axis] = 0;
         }
     }
+}
+void pidSetExpectedGyroError(flight_dynamics_index_t axis, float error)
+{
+    expectedGyroError[axis] = error;
 }

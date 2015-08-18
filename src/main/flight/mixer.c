@@ -38,6 +38,7 @@
 #include "sensors/battery.h"
 
 #include "flight/mixer.h"
+#include "flight/mixer_tricopter.h"
 #include "flight/failsafe.h"
 #include "flight/pid.h"
 #include "flight/imu.h"
@@ -55,6 +56,9 @@
 #define EXTERNAL_CONVERSION_MIN_VALUE 1000
 #define EXTERNAL_CONVERSION_MAX_VALUE 2000
 #define EXTERNAL_CONVERSION_3D_MID_VALUE 1500
+
+#define TRICOPTER_ERROR_RATE_YAW_SATURATED 75 // rate at which tricopter yaw axis becomes saturated, determined experimentally by TriFlight
+
 
 static uint8_t motorCount;
 static float motorMixRange;
@@ -274,6 +278,16 @@ uint8_t getMotorCount()
 float getMotorMixRange()
 {
     return motorMixRange;
+}
+
+bool mixerIsOutputSaturated(int axis, float errorRate)
+{
+    if (axis == FD_YAW && triMixerInUse()) {
+        return errorRate > TRICOPTER_ERROR_RATE_YAW_SATURATED;
+    } else {
+        return motorMixRange >= 1.0f;
+    }
+    return false;
 }
 
 bool isMotorProtocolDshot(void) {
@@ -559,7 +573,7 @@ void mixTable(pidProfile_t *pidProfile)
     uint32_t i = 0;
     for (i = 0; i < motorCount; i++) {
         motor[i] = motorOutputMin + lrintf(motorOutputRange * (motorMix[i] + (throttle * currentMixer[i].throttle)));
-
+        motor[i] += triGetMotorCorrection(i);
         // Dshot works exactly opposite in lower 3D section.
         if (mixerInversion) {
             motor[i] = motorOutputMin + (motorOutputMax - motor[i]);

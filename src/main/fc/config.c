@@ -80,6 +80,7 @@
 #include "telemetry/telemetry.h"
 
 #include "flight/mixer.h"
+#include "flight/mixer_tricopter.h"
 #include "flight/servos.h"
 #include "flight/pid.h"
 #include "flight/imu.h"
@@ -249,6 +250,20 @@ void resetServoConfig(servoConfig_t *servoConfig)
             servoIndex++;
         }
     }
+}
+
+void resetTriMixerConfig(triMixerConfig_t *triMixerConfig)
+{
+    triMixerConfig->tri_motor_acc_yaw_correction = 1500;
+    triMixerConfig->tri_motor_acceleration = 0.18f;
+    triMixerConfig->tri_servo_feedback = TRI_SERVO_FB_VIRTUAL;
+    triMixerConfig->tri_servo_max_adc = 0;
+    triMixerConfig->tri_servo_mid_adc = 0;
+    triMixerConfig->tri_servo_min_adc = 0;
+    triMixerConfig->tri_tail_motor_thrustfactor = 138;
+    triMixerConfig->tri_tail_servo_speed = 300; // Default for BMS-210DMH at 5V
+    triMixerConfig->tri_dynamic_yaw_minthrottle = 500;
+    triMixerConfig->tri_dynamic_yaw_maxthrottle = 12;
 }
 #endif
 
@@ -647,7 +662,6 @@ void resetMixerConfig(mixerConfig_t *mixerConfig)
 #ifdef USE_SERVOS
 void resetServoMixerConfig(servoMixerConfig_t *servoMixerConfig)
 {
-    servoMixerConfig->tri_unarmed_servo = 1;
     servoMixerConfig->servo_lowpass_freq = 400;
     servoMixerConfig->servo_lowpass_enable = 0;
 }
@@ -902,6 +916,7 @@ void createDefaultConfig(master_t *config)
 #ifdef USE_SERVOS
     resetServoMixerConfig(&config->servoMixerConfig);
     resetServoConfig(&config->servoConfig);
+    resetTriMixerConfig(&config->triMixerConfig);
 #endif
     resetFlight3DConfig(&config->flight3DConfig);
 
@@ -1086,6 +1101,11 @@ void activateConfig(void)
     );
 
 #ifdef USE_SERVOS
+
+    if ((mixerConfig()->mixerMode == MIXER_TRI) || (mixerConfig()->mixerMode == MIXER_CUSTOM_TRI)) {
+        servoProfile()->servoConf[5].angleAtMin = 40;
+        servoProfile()->servoConf[5].angleAtMax = 40;
+    }
     servoUseConfigs(&masterConfig.servoMixerConfig, masterConfig.servoProfile.servoConf, &masterConfig.gimbalConfig, &masterConfig.channelForwardingConfig);
 #endif
 

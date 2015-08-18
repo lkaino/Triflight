@@ -98,3 +98,6 @@ void pidResetITerm(void);
 
 int calcHorizonLevelStrength(uint16_t rxConfigMidrc, int horizonTiltEffect,
         uint8_t horizonTiltMode, int horizonSensitivity);
+		
+void pidResetErrorGyroAxis(flight_dynamics_index_t axis);
+void pidSetExpectedGyroError(flight_dynamics_index_t axis, int16_t error);

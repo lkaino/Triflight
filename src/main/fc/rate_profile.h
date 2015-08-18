@@ -26,6 +26,8 @@ typedef struct controlRateConfig_s {
     uint8_t dynThrPID;
     uint8_t rcYawExpo8;
     uint16_t tpa_breakpoint;                // Breakpoint at which TPA is activated
+    uint16_t tri_dynamic_yaw_minthrottle;
+    uint16_t tri_dynamic_yaw_maxthrottle;
 } controlRateConfig_t;
 
 #define MAX_CONTROL_RATE_PROFILE_COUNT 3

@@ -486,4 +486,27 @@ bool failsafeIsActive(void) {
     return false;
 }
 
+//Tricopter mixer stubs
+void triInitMixer(servoParam_t *pTailServoConfig, int16_t *pTailServo, mixerConfig_t *pMixerConfig) {
+    UNUSED(pTailServoConfig);
+    UNUSED(pTailServo);
+    UNUSED(pMixerConfig);
+}
+
+uint16_t triGetCurrentServoAngle() {
+    return 0;
+}
+
+void triServoMixer() {
+}
+
+int16_t triGetMotorCorrection(uint8_t motorIndex) {
+    UNUSED(motorIndex);
+    return 0;
+}
+
+_Bool triEnableServoUnarmed(void) {
+    return true;
+}
+
 }

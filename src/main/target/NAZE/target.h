@@ -122,7 +122,7 @@
 #define INVERTER
 //#define DISPLAY
 
-#define SONAR
+//#define SONAR     // Disabled on Triflight
 #define SONAR_PWM_TRIGGER_PIN       Pin_8   // PWM5 (PB8) - 5v tolerant
 #define SONAR_PWM_TRIGGER_GPIO      GPIOB
 #define SONAR_PWM_ECHO_PIN          Pin_9   // PWM6 (PB9) - 5v tolerant
@@ -189,8 +189,8 @@
 #define ADC2_CHANNEL                ADC_Channel_1
 
 #define ADC3_GPIO                   GPIOA
-#define ADC3_GPIO_PIN               GPIO_Pin_5
-#define ADC3_CHANNEL                ADC_Channel_5
+#define ADC3_GPIO_PIN               GPIO_Pin_7
+#define ADC3_CHANNEL                ADC_Channel_7
 
 #define ADC_CHANNEL_COUNT 4
 

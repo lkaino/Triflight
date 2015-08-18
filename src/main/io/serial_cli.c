@@ -92,6 +92,7 @@
 #include "flight/gtune.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
+#include "flight/mixer_tricopter.h"
 #include "flight/servos.h"
 #include "flight/navigation.h"
 #include "flight/failsafe.h"
@@ -433,6 +434,10 @@ static const char * const lookupTableGyroLpf[] = {
     "10HZ"
 };
 
+static const char * const lookupServoFeedback[] = {
+    "VIRTUAL", "RSSI", "CURRENT", "EXT1"
+};
+
 static const char * const lookupTablePidDeltaMethod[] = {
     "MEASUREMENT", "ERROR"
 };
@@ -482,6 +487,7 @@ typedef enum {
     TABLE_PID_DELTA_METHOD,
     TABLE_LOWPASS_TYPE,
     TABLE_HORIZON_TILT_MODE,
+    TABLE_SERVO_FEEDBACK,
 } lookupTableIndex_e;
 
 static const lookupTableEntry_t lookupTables[] = {
@@ -507,6 +513,7 @@ static const lookupTableEntry_t lookupTables[] = {
     { lookupTablePidDeltaMethod, sizeof(lookupTablePidDeltaMethod) / sizeof(char *) },
     { lookupTableLowpassType, sizeof(lookupTableLowpassType) / sizeof(char *) },
     { lookupTableHorizonTiltMode, sizeof(lookupTableHorizonTiltMode) / sizeof(char *) },
+	{ lookupServoFeedback, sizeof(lookupServoFeedback) / sizeof(char *) },
 };
 
 #define VALUE_TYPE_OFFSET 0
@@ -705,6 +712,11 @@ const clivalue_t valueTable[] = {
     { "tri_unarmed_servo",          VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON } , PG_MIXER_CONFIG, offsetof(mixerConfig_t, tri_unarmed_servo)},
     { "servo_lowpass_freq",         VAR_FLOAT  | MASTER_VALUE, .config.minmax = { 10,  400} , PG_MIXER_CONFIG, offsetof(mixerConfig_t, servo_lowpass_freq)},
     { "servo_lowpass_enable",       VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON } , PG_MIXER_CONFIG, offsetof(mixerConfig_t, servo_lowpass_enable)},
+    { "tri_tail_motor_thrustfactor",VAR_INT16  | MASTER_VALUE, .config.minmax = { TAIL_THRUST_FACTOR_MIN, TAIL_THRUST_FACTOR_MAX } , PG_MIXER_CONFIG, offsetof(mixerConfig_t, tri_tail_motor_thrustfactor)},
+    { "tri_tail_servo_speed",       VAR_INT16  | MASTER_VALUE, .config.minmax = { 0, 1000 }, PG_MIXER_CONFIG, offsetof(mixerConfig_t, tri_tail_servo_speed)},
+    { "tri_servo_feedback",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_SERVO_FEEDBACK }, PG_MIXER_CONFIG, offsetof(mixerConfig_t, tri_servo_feedback)},
+    { "tri_motor_acc_yaw_correction",VAR_UINT16| MASTER_VALUE, .config.minmax = { 0, TRI_MOTOR_ACC_CORRECTION_MAX }, PG_MIXER_CONFIG, offsetof(mixerConfig_t, tri_motor_acc_yaw_correction)},
+    { "tri_motor_acceleration",     VAR_FLOAT  | MASTER_VALUE, .config.minmax = { 0.01f, 1.0f }, PG_MIXER_CONFIG, offsetof(mixerConfig_t, tri_motor_acceleration)},
 #endif
 
     { "default_rate_profile",       VAR_UINT8  | PROFILE_VALUE , .config.minmax = { 0,  MAX_CONTROL_RATE_PROFILE_COUNT - 1 } , PG_RATE_PROFILE_SELECTION, offsetof(rateProfileSelection_t, defaultRateProfileIndex)},
@@ -719,6 +731,8 @@ const clivalue_t valueTable[] = {
     { "yaw_rate",                   VAR_UINT8  | CONTROL_RATE_VALUE, .config.minmax = { 0,  CONTROL_RATE_CONFIG_YAW_RATE_MAX } , PG_CONTROL_RATE_PROFILES, offsetof(controlRateConfig_t, rates[YAW])},
     { "tpa_rate",                   VAR_UINT8  | CONTROL_RATE_VALUE, .config.minmax = { 0,  CONTROL_RATE_CONFIG_TPA_MAX} , PG_CONTROL_RATE_PROFILES, offsetof(controlRateConfig_t, dynThrPID)},
     { "tpa_breakpoint",             VAR_UINT16 | CONTROL_RATE_VALUE, .config.minmax = { PWM_RANGE_MIN,  PWM_RANGE_MAX} , PG_CONTROL_RATE_PROFILES, offsetof(controlRateConfig_t, tpa_breakpoint)},
+    { "tri_dynamic_yaw_minthrottle",VAR_UINT16 | CONTROL_RATE_VALUE, .config.minmax = { 0, 500} , PG_CONTROL_RATE_PROFILES, offsetof(controlRateConfig_t, tri_dynamic_yaw_minthrottle)},
+    { "tri_dynamic_yaw_maxthrottle",VAR_UINT16 | CONTROL_RATE_VALUE, .config.minmax = { 0, 100} , PG_CONTROL_RATE_PROFILES, offsetof(controlRateConfig_t, tri_dynamic_yaw_maxthrottle)},
 
     { "failsafe_delay",             VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0,  200 } , PG_FAILSAFE_CONFIG, offsetof(failsafeConfig_t, failsafe_delay)},
     { "failsafe_off_delay",         VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0,  200 } , PG_FAILSAFE_CONFIG, offsetof(failsafeConfig_t, failsafe_off_delay)},
@@ -2691,7 +2705,7 @@ static void cliVersion(char *cmdline)
 {
     UNUSED(cmdline);
 
-    cliPrintf("# Cleanflight/%s %s %s / %s (%s)",
+    cliPrintf("# TriFlight 0.5 Beta 3/%s %s %s / %s (%s)",
         targetName,
         FC_VERSION_STRING,
         buildDate,

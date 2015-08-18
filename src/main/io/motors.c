@@ -41,8 +41,8 @@
 PG_REGISTER_WITH_RESET_TEMPLATE(motorConfig_t, motorConfig, PG_MOTOR_CONFIG, 1);
 
 PG_RESET_TEMPLATE(motorConfig_t, motorConfig,
-    .minthrottle = 1150,
-    .maxthrottle = 1850,
+    .minthrottle = 1100,
+    .maxthrottle = 2000,
     .mincommand = 1000,
     .reserved1 = 0,
     .motor_pwm_rate = DEFAULT_PWM_RATE,

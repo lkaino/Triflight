@@ -34,7 +34,7 @@ FLASH_SIZE ?=
 # Things that need to be maintained as the source changes
 #
 
-FORKNAME			 = cleanflight
+FORKNAME			 = triflight
 
 64K_TARGETS  = CJMCU
 128K_TARGETS = ALIENFLIGHTF1 CC3D NAZE OLIMEXINO RMDO SPRACINGF1OSD
@@ -287,6 +287,7 @@ FC_COMMON_SRC = \
 		   flight/pid_mw23.c \
 		   flight/imu.c \
 		   flight/mixer.c \
+		   flight/mixer_tricopter.c \
 		   flight/servos.c \
 		   drivers/bus_i2c_soft.c \
 		   drivers/exti.c \

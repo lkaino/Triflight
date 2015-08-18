@@ -107,6 +107,7 @@
 #include "flight/imu.h"
 #include "flight/mixer.h"
 #include "flight/servos.h"
+#include "flight/mixer_tricopter.h"
 #include "flight/failsafe.h"
 #include "flight/navigation.h"
 
@@ -528,12 +529,23 @@ void init(void)
 
 #ifdef OLIMEXINO
     adc_params.channelMask |= ADC_CHANNEL_MASK(ADC_EXTERNAL);
-#endif
-#ifdef NAZE
-    // optional ADC5 input on rev.5 hardware
-    adc_params.channelMask |= (hardwareRevision >= NAZE32_REV5) ? ADC_CHANNEL_MASK(ADC_EXTERNAL) : 0;
+    adc_params.enableExternal1 = (hardwareRevision >= NAZE32_REV5);
 #endif
 
+#ifdef USE_SERVOS
+    if ((mixerConfig()->mixerMode == MIXER_TRI) || (mixerConfig()->mixerMode == MIXER_CUSTOM_TRI))
+    {
+        switch (mixerConfig()->tri_servo_feedback)
+        {
+        case TRI_SERVO_FB_RSSI:     adc_params.channelMask |= ADC_CHANNEL_MASK(ADC_RSSI);     break;
+        case TRI_SERVO_FB_CURRENT:  adc_params.channelMask |= ADC_CHANNEL_MASK(ADC_AMPERAGE); break;
+#ifdef ADC_EXTERNAL
+        case TRI_SERVO_FB_EXT1:     adc_params.channelMask |= ADC_CHANNEL_MASK(ADC_EXTERNAL); break;
+#endif
+        default: break;
+        }
+    }
+#endif
     adcInit(&adc_params);
 #endif
 

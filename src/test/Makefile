@@ -1068,6 +1068,30 @@ $(OBJECT_DIR)/telemetry_ibus_unittest : \
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
 
 
+$(OBJECT_DIR)/flight/mixer_tricopter.o : \
+	$(USER_DIR)/flight/mixer_tricopter.c \
+	$(USER_DIR)/flight/mixer_tricopter.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/flight/mixer_tricopter.c -o $@
+
+$(OBJECT_DIR)/mixer_tricopter_unittest.o : \
+	$(TEST_DIR)/mixer_tricopter_unittest.cc \
+	$(USER_DIR)/flight/mixer_tricopter.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/mixer_tricopter_unittest.cc -o $@
+
+$(OBJECT_DIR)/mixer_tricopter_unittest : \
+	$(OBJECT_DIR)/common/maths.o \
+	$(OBJECT_DIR)/flight/mixer_tricopter.o  \
+	$(OBJECT_DIR)/mixer_tricopter_unittest.o \
+	$(OBJECT_DIR)/gtest_main.a
+
+	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
+
 ## test        : Build and run the Unit Tests
 test: $(TESTS:%=test-%)
 

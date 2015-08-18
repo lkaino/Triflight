@@ -65,7 +65,7 @@
 #include "io/servos.h"
 
 #include "flight/mixer.h"
-#include "flight/servos.h"
+#include "flight/mixer_tricopter.h"
 #include "flight/altitudehold.h"
 #include "flight/failsafe.h"
 #include "flight/imu.h"
@@ -993,7 +993,7 @@ static void loadMainState(void)
 
 #ifdef USE_SERVOS
     //Tail servo for tricopters
-    blackboxCurrent->servo[5] = servo[5];
+    blackboxCurrent->servo[5] = triGetCurrentServoAngle();
 #endif
 }
 

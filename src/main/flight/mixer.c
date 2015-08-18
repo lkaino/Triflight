@@ -60,6 +60,8 @@
 #include "fc/runtime_config.h"
 #include "fc/config.h"
 
+#include "mixer_tricopter.h"
+
 //#define MIXER_DEBUG
 
 uint8_t motorCount;
@@ -87,13 +89,22 @@ PG_RESET_TEMPLATE(motor3DConfig_t, motor3DConfig,
 
 #ifdef USE_SERVOS
 PG_RESET_TEMPLATE(mixerConfig_t, mixerConfig,
-    .mixerMode = MIXER_QUADX,
+    .mixerMode = MIXER_TRI,
     .pid_at_min_throttle = 1,
     .yaw_motor_direction = 1,
     .yaw_jump_prevention_limit = 200,
 
-    .tri_unarmed_servo = 1,
+    .tri_unarmed_servo = 0,
     .servo_lowpass_freq = 400.0f,
+
+    .tri_tail_motor_thrustfactor = 138,
+    .tri_tail_servo_speed = 300, // Default for BMS-210DMH at 5V
+    .tri_servo_min_adc = 0,
+    .tri_servo_mid_adc = 0,
+    .tri_servo_max_adc = 0,
+    .tri_servo_feedback = TRI_SERVO_FB_VIRTUAL,
+    .tri_motor_acc_yaw_correction = 10,
+    .tri_motor_acceleration = 0.18f,
 );
 #else
 PG_RESET_TEMPLATE(mixerConfig_t, mixerConfig,
@@ -502,7 +513,7 @@ void mixTable(void)
         // Now add in the desired throttle, but keep in a range that doesn't clip adjusted
         // roll/pitch/yaw. This could move throttle down, but also up for those low throttle flips.
         for (i = 0; i < motorCount; i++) {
-            motor[i] = rollPitchYawMix[i] + constrain(throttle * currentMixer[i].throttle, throttleMin, throttleMax);
+            motor[i] = rollPitchYawMix[i] + constrain(throttle * currentMixer[i].throttle + triGetMotorCorrection(i), throttleMin, throttleMax);
 
             if (isFailsafeActive) {
                 motor[i] = mixConstrainMotorForFailsafeCondition(i);
@@ -527,7 +538,7 @@ void mixTable(void)
                 rcCommand[THROTTLE] * currentMixer[i].throttle +
                 axisPID[FD_PITCH] * currentMixer[i].pitch +
                 axisPID[FD_ROLL] * currentMixer[i].roll +
-                -mixerConfig()->yaw_motor_direction * axisPID[FD_YAW] * currentMixer[i].yaw;
+                -mixerConfig()->yaw_motor_direction * axisPID[FD_YAW] * currentMixer[i].yaw + triGetMotorCorrection(i);
         }
 
         // Find the maximum motor output.

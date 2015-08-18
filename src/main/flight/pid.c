@@ -57,10 +57,12 @@ int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];
 #endif
 
 // PIDweight is a scale factor for PIDs which is derived from the throttle and TPA setting, and 100 = 100% scale means no PID reduction
-uint8_t PIDweight[3];
+uint8_t PIDweight[3], Iweigth[3];
 
 int32_t lastITerm[3], ITermLimit[3];
 float lastITermf[3], ITermLimitf[3];
+
+int16_t expectedGyroError[3] = {0};
 
 pt1Filter_t deltaFilter[3];
 pt1Filter_t yawFilter;
@@ -83,16 +85,16 @@ pidControllerFuncPtr pid_controller = pidLuxFloat;
 PG_REGISTER_PROFILE_WITH_RESET_TEMPLATE(pidProfile_t, pidProfile, PG_PID_PROFILE, 0);
 
 PG_RESET_TEMPLATE(pidProfile_t, pidProfile,
-    .pidController = PID_CONTROLLER_LUX_FLOAT,
+    .pidController = PID_CONTROLLER_MWREWRITE,
     .P8[PIDROLL] = 40,
-    .I8[PIDROLL] = 30,
-    .D8[PIDROLL] = 23,
-    .P8[PIDPITCH] = 40,
-    .I8[PIDPITCH] = 30,
-    .D8[PIDPITCH] = 23,
-    .P8[PIDYAW] = 85,
-    .I8[PIDYAW] = 45,
-    .D8[PIDYAW] = 0,
+    .I8[PIDROLL] = 24,
+    .D8[PIDROLL] = 30,
+    .P8[PIDPITCH] = 38,
+    .I8[PIDPITCH] = 23,
+    .D8[PIDPITCH] = 20,
+    .P8[PIDYAW] = 70,
+    .I8[PIDYAW] = 10,
+    .D8[PIDYAW] = 35,
     .P8[PIDALT] = 50,
     .I8[PIDALT] = 0,
     .D8[PIDALT] = 0,
@@ -138,6 +140,12 @@ float getdT(void)
     if (!dT) dT = (float)targetPidLooptime * 0.000001f;
 
     return dT;
+}
+
+void pidResetErrorGyroAxis(flight_dynamics_index_t axis)
+{
+    lastITerm[axis] = 0;
+    lastITermf[axis] = 0.0f;
 }
 
 void pidSetTargetLooptime(uint32_t pidLooptime)
@@ -269,4 +277,9 @@ int calcHorizonLevelStrength(uint16_t rxConfigMidrc, int horizonTiltEffect,
         }
     }
     return constrain(horizonLevelStrength, 0, 100);
+}
+
+void pidSetExpectedGyroError(flight_dynamics_index_t axis, int16_t error)
+{
+    expectedGyroError[axis] = error;
 }

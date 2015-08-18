@@ -123,7 +123,7 @@ int16_t telemTemperature1;      // gyro sensor temperature
 static uint32_t disarmAt;     // Time of automatic disarm when "Don't spin the motors when armed" is enabled and auto_disarm_delay is nonzero
 
 extern uint32_t currentTime;
-extern uint8_t PIDweight[3];
+extern uint8_t PIDweight[3], Iweigth[3];
 extern uint8_t dynP8[3], dynI8[3], dynD8[3];
 
 static bool isRXDataNew;
@@ -194,6 +194,11 @@ static void updateRcCommands(void)
         }
     }
 
+    // YAW dynamic integral adjustment
+    // Attenuate integral term proportional to the stick position, 100% attenuation starting at full stick position
+    const int32_t yawCommandFromCenter = ABS(rcData[YAW] - 1500);
+    const uint8_t yawIWeigth = MAX(0, (100 - (yawCommandFromCenter * 100 / 500)));
+
     for (int axis = 0; axis < 3; axis++) {
         int32_t prop1;
         int32_t tmp = MIN(ABS(rcData[axis] - rxConfig()->midrc), 500);
@@ -211,6 +216,7 @@ static void updateRcCommands(void)
             prop1 = (uint16_t)prop1 * prop2 / 100;
             // non coupled PID reduction scaler used in PID controller 1 and PID controller 2. 100 means 100% of the pids
             PIDweight[axis] = prop2;
+			Iweigth[axis] = 100;
         } else {
             if (rcControlsConfig()->yaw_deadband) {
                 if (tmp > rcControlsConfig()->yaw_deadband) {
@@ -223,6 +229,7 @@ static void updateRcCommands(void)
             prop1 = 100 - (uint16_t)currentControlRateProfile->rates[axis] * ABS(tmp) / 500;
             // YAW TPA disabled.
             PIDweight[axis] = 100;
+			Iweigth[axis] = yawIWeigth;
         }
 #ifdef USE_PID_MW23
         // FIXME axis indexes into pids.  use something like lookupPidIndex(rc_alias_e alias) to reduce coupling.
@@ -1060,3 +1067,25 @@ void taskTransponder(void)
     }
 }
 #endif
+
+bool isRcAxisWithinDeadband(int32_t axis)
+{
+    int32_t tmp = MIN(ABS(rcData[axis] - rxConfig()->midrc), 500);
+    bool ret = false;
+    if (axis == ROLL || axis == PITCH)
+    {
+        if (tmp <= rcControlsConfig()->deadband)
+        {
+            ret = true;
+        }
+    }
+    else
+    {
+        if (tmp <= rcControlsConfig()->deadband)
+        {
+            ret = true;
+        }
+    }
+
+    return ret;
+}

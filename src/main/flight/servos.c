@@ -59,6 +59,7 @@
 #include "sensors/acceleration.h"
 
 #include "flight/mixer.h"
+#include "flight/mixer_tricopter.h"
 #include "flight/servos.h"
 #include "flight/failsafe.h"
 #include "flight/pid.h"
@@ -225,6 +226,11 @@ void mixerInitServos(servoMixer_t *initialCustomServoMixers)
     for (uint8_t i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
         servo[i] = DEFAULT_SERVO_MIDDLE;
     }
+
+    if ((mixerConfig()->mixerMode == MIXER_TRI) || (mixerConfig()->mixerMode == MIXER_CUSTOM_TRI))
+    {
+        triInitMixer(&servoConf[SERVO_RUDDER], &servo[SERVO_RUDDER]);
+    }
 }
 
 void mixerUsePWMIOConfiguration(pwmIOConfiguration_t *pwmIOConfiguration)
@@ -354,7 +360,7 @@ void writeServos(void)
 
         case MIXER_TRI:
         case MIXER_CUSTOM_TRI:
-            if (mixerConfig()->tri_unarmed_servo) {
+            if (triEnableServoUnarmed()) {
                 // if unarmed flag set, we always move servo
                 pwmWriteServo(servoIndex++, servo[SERVO_RUDDER]);
             } else {
@@ -408,78 +414,85 @@ void writeServos(void)
 
 STATIC_UNIT_TESTED void servoMixer(void)
 {
-    int16_t input[INPUT_SOURCE_COUNT]; // Range [-500:+500]
-    static int16_t currentOutput[MAX_SERVO_RULES];
-    uint8_t i;
-
-    if (FLIGHT_MODE(PASSTHRU_MODE)) {
-        // Direct passthru from RX
-        input[INPUT_STABILIZED_ROLL] = rcCommand[ROLL];
-        input[INPUT_STABILIZED_PITCH] = rcCommand[PITCH];
-        input[INPUT_STABILIZED_YAW] = rcCommand[YAW];
-    } else {
-        // Assisted modes (gyro only or gyro+acc according to AUX configuration in Gui
-        input[INPUT_STABILIZED_ROLL] = axisPID[FD_ROLL];
-        input[INPUT_STABILIZED_PITCH] = axisPID[FD_PITCH];
-        input[INPUT_STABILIZED_YAW] = axisPID[FD_YAW];
-
-        // Reverse yaw servo when inverted in 3D mode
-        if (feature(FEATURE_3D) && (rcData[THROTTLE] < rxConfig()->midrc)) {
-            input[INPUT_STABILIZED_YAW] *= -1;
-        }
+    if ((mixerConfig()->mixerMode == MIXER_TRI) || (mixerConfig()->mixerMode == MIXER_CUSTOM_TRI))
+    {
+        triServoMixer(axisPID[YAW]);
     }
+    else
+    {
+        int16_t input[INPUT_SOURCE_COUNT]; // Range [-500:+500]
+        static int16_t currentOutput[MAX_SERVO_RULES];
+        uint8_t i;
 
-    input[INPUT_GIMBAL_PITCH] = scaleRange(attitude.values.pitch, -1800, 1800, -500, +500);
-    input[INPUT_GIMBAL_ROLL] = scaleRange(attitude.values.roll, -1800, 1800, -500, +500);
-
-    input[INPUT_STABILIZED_THROTTLE] = motor[0] - 1000 - 500;  // Since it derives from rcCommand or mincommand and must be [-500:+500]
-
-    // center the RC input value around the RC middle value
-    // by subtracting the RC middle value from the RC input value, we get:
-    // data - middle = input
-    // 2000 - 1500 = +500
-    // 1500 - 1500 = 0
-    // 1000 - 1500 = -500
-    input[INPUT_RC_ROLL]     = rcData[ROLL]     - rxConfig()->midrc;
-    input[INPUT_RC_PITCH]    = rcData[PITCH]    - rxConfig()->midrc;
-    input[INPUT_RC_YAW]      = rcData[YAW]      - rxConfig()->midrc;
-    input[INPUT_RC_THROTTLE] = rcData[THROTTLE] - rxConfig()->midrc;
-    input[INPUT_RC_AUX1]     = rcData[AUX1]     - rxConfig()->midrc;
-    input[INPUT_RC_AUX2]     = rcData[AUX2]     - rxConfig()->midrc;
-    input[INPUT_RC_AUX3]     = rcData[AUX3]     - rxConfig()->midrc;
-    input[INPUT_RC_AUX4]     = rcData[AUX4]     - rxConfig()->midrc;
-
-    for (i = 0; i < MAX_SUPPORTED_SERVOS; i++)
-        servo[i] = 0;
-
-    // mix servos according to rules
-    for (i = 0; i < servoRuleCount; i++) {
-        // consider rule if no box assigned or box is active
-        if (currentServoMixer[i].box == 0 || rcModeIsActive(BOXSERVO1 + currentServoMixer[i].box - 1)) {
-            uint8_t target = currentServoMixer[i].targetChannel;
-            uint8_t from = currentServoMixer[i].inputSource;
-            uint16_t servo_width = servoConf[target].max - servoConf[target].min;
-            int16_t min = currentServoMixer[i].min * servo_width / 100 - servo_width / 2;
-            int16_t max = currentServoMixer[i].max * servo_width / 100 - servo_width / 2;
-
-            if (currentServoMixer[i].speed == 0)
-                currentOutput[i] = input[from];
-            else {
-                if (currentOutput[i] < input[from])
-                    currentOutput[i] = constrain(currentOutput[i] + currentServoMixer[i].speed, currentOutput[i], input[from]);
-                else if (currentOutput[i] > input[from])
-                    currentOutput[i] = constrain(currentOutput[i] - currentServoMixer[i].speed, input[from], currentOutput[i]);
-            }
-
-            servo[target] += servoDirection(target, from) * constrain(((int32_t)currentOutput[i] * currentServoMixer[i].rate) / 100, min, max);
+        if (FLIGHT_MODE(PASSTHRU_MODE)) {
+            // Direct passthru from RX
+            input[INPUT_STABILIZED_ROLL] = rcCommand[ROLL];
+            input[INPUT_STABILIZED_PITCH] = rcCommand[PITCH];
+            input[INPUT_STABILIZED_YAW] = rcCommand[YAW];
         } else {
-            currentOutput[i] = 0;
-        }
-    }
+            // Assisted modes (gyro only or gyro+acc according to AUX configuration in Gui
+            input[INPUT_STABILIZED_ROLL] = axisPID[FD_ROLL];
+            input[INPUT_STABILIZED_PITCH] = axisPID[FD_PITCH];
+            input[INPUT_STABILIZED_YAW] = axisPID[FD_YAW];
 
-    for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
-        servo[i] = ((int32_t)servoConf[i].rate * servo[i]) / 100L;
-        servo[i] += determineServoMiddleOrForwardFromChannel(i);
+            // Reverse yaw servo when inverted in 3D mode
+            if (feature(FEATURE_3D) && (rcData[THROTTLE] < rxConfig()->midrc)) {
+                input[INPUT_STABILIZED_YAW] *= -1;
+            }
+        }
+
+        input[INPUT_GIMBAL_PITCH] = scaleRange(attitude.values.pitch, -1800, 1800, -500, +500);
+        input[INPUT_GIMBAL_ROLL] = scaleRange(attitude.values.roll, -1800, 1800, -500, +500);
+
+        input[INPUT_STABILIZED_THROTTLE] = motor[0] - 1000 - 500;  // Since it derives from rcCommand or mincommand and must be [-500:+500]
+
+        // center the RC input value around the RC middle value
+        // by subtracting the RC middle value from the RC input value, we get:
+        // data - middle = input
+        // 2000 - 1500 = +500
+        // 1500 - 1500 = 0
+        // 1000 - 1500 = -500
+        input[INPUT_RC_ROLL]     = rcData[ROLL]     - rxConfig()->midrc;
+        input[INPUT_RC_PITCH]    = rcData[PITCH]    - rxConfig()->midrc;
+        input[INPUT_RC_YAW]      = rcData[YAW]      - rxConfig()->midrc;
+        input[INPUT_RC_THROTTLE] = rcData[THROTTLE] - rxConfig()->midrc;
+        input[INPUT_RC_AUX1]     = rcData[AUX1]     - rxConfig()->midrc;
+        input[INPUT_RC_AUX2]     = rcData[AUX2]     - rxConfig()->midrc;
+        input[INPUT_RC_AUX3]     = rcData[AUX3]     - rxConfig()->midrc;
+        input[INPUT_RC_AUX4]     = rcData[AUX4]     - rxConfig()->midrc;
+
+        for (i = 0; i < MAX_SUPPORTED_SERVOS; i++)
+            servo[i] = 0;
+
+        // mix servos according to rules
+        for (i = 0; i < servoRuleCount; i++) {
+            // consider rule if no box assigned or box is active
+            if (currentServoMixer[i].box == 0 || rcModeIsActive(BOXSERVO1 + currentServoMixer[i].box - 1)) {
+                uint8_t target = currentServoMixer[i].targetChannel;
+                uint8_t from = currentServoMixer[i].inputSource;
+                uint16_t servo_width = servoConf[target].max - servoConf[target].min;
+                int16_t min = currentServoMixer[i].min * servo_width / 100 - servo_width / 2;
+                int16_t max = currentServoMixer[i].max * servo_width / 100 - servo_width / 2;
+
+                if (currentServoMixer[i].speed == 0)
+                    currentOutput[i] = input[from];
+                else {
+                    if (currentOutput[i] < input[from])
+                        currentOutput[i] = constrain(currentOutput[i] + currentServoMixer[i].speed, currentOutput[i], input[from]);
+                    else if (currentOutput[i] > input[from])
+                        currentOutput[i] = constrain(currentOutput[i] - currentServoMixer[i].speed, input[from], currentOutput[i]);
+                }
+
+                servo[target] += servoDirection(target, from) * constrain(((int32_t)currentOutput[i] * currentServoMixer[i].rate) / 100, min, max);
+            } else {
+                currentOutput[i] = 0;
+            }
+        }
+
+        for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
+            servo[i] = ((int32_t)servoConf[i].rate * servo[i]) / 100L;
+            servo[i] += determineServoMiddleOrForwardFromChannel(i);
+        }
     }
 }
 

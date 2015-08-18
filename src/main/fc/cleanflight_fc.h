@@ -27,3 +27,4 @@ void mwDisarm(void);
 void mwArm(void);
 
 bool isCalibrating(void);
+bool isRcAxisWithinDeadband(int32_t axis);

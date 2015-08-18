@@ -86,6 +86,14 @@ typedef struct mixerConfig_s {
     uint8_t tri_unarmed_servo;              // send tail servo correction pulses even when unarmed
     float servo_lowpass_freq;             // lowpass servo filter frequency selection; 1/1000ths of loop freq
     int8_t servo_lowpass_enable;            // enable/disable lowpass filter
+    int16_t tri_tail_motor_thrustfactor;
+    int16_t tri_tail_servo_speed;
+    uint8_t tri_servo_feedback;
+    uint16_t tri_servo_min_adc;
+    uint16_t tri_servo_mid_adc;
+    uint16_t tri_servo_max_adc;
+    uint16_t tri_motor_acc_yaw_correction;
+    float tri_motor_acceleration;
 #endif
 } mixerConfig_t;
 

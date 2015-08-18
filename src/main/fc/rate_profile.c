@@ -33,6 +33,8 @@
 #include "fc/rc_curves.h"
 #include "fc/rate_profile.h"
 
+#include "common/axis.h"
+
 PG_REGISTER_PROFILE(rateProfileSelection_t, rateProfileSelection, PG_RATE_PROFILE_SELECTION, 0);
 PG_REGISTER_ARR_WITH_RESET_FN(controlRateConfig_t, MAX_CONTROL_RATE_PROFILE_COUNT, controlRateProfiles, PG_CONTROL_RATE_PROFILES, 0);
 
@@ -43,10 +45,16 @@ void pgResetFn_controlRateProfiles(controlRateConfig_t *instance)
 {
     for (int i = 0; i < MAX_CONTROL_RATE_PROFILE_COUNT; i++) {
         RESET_CONFIG(controlRateConfig_t, &instance[i],
-            .rcRate8 = 90,
-            .rcExpo8 = 65,
+            .rcRate8 = 100,
+            .rcExpo8 = 85,
             .thrMid8 = 50,
             .tpa_breakpoint = 1500,
+            .rcYawExpo8 = 83,
+            .rates[FD_PITCH] = 38,
+            .rates[FD_ROLL] = 38,
+            .rates[FD_YAW] = 50,
+            .tri_dynamic_yaw_minthrottle = 250,
+            .tri_dynamic_yaw_maxthrottle = 60,
         );
     }
 }

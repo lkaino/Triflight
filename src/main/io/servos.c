@@ -34,6 +34,6 @@ PG_REGISTER_WITH_RESET_TEMPLATE(servoConfig_t, servoConfig, PG_SERVO_CONFIG, 0);
 
 PG_RESET_TEMPLATE(servoConfig_t, servoConfig,
     .servoCenterPulse = 1500,
-    .servo_pwm_rate = 50,
+    .servo_pwm_rate = 250,
 );
 #endif

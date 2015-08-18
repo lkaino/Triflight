@@ -250,7 +250,9 @@ protected:
             .rates = {0, 0, 0},
             .dynThrPID = 0,
             .rcYawExpo8 = 0,
-            .tpa_breakpoint = 0
+            .tpa_breakpoint = 0,
+            .tri_dynamic_yaw_minthrottle = 100,
+            .tri_dynamic_yaw_maxthrottle = 100
     };
 
     adjustmentRange_t adjustmentRange = {
@@ -282,7 +284,8 @@ protected:
         controlRateConfig.rates[2] = 0;
         controlRateConfig.dynThrPID = 0;
         controlRateConfig.tpa_breakpoint = 0;
-
+        controlRateConfig.tri_dynamic_yaw_minthrottle = 100;
+        controlRateConfig.tri_dynamic_yaw_maxthrottle = 100;
     }
 };
 
@@ -316,19 +319,6 @@ TEST_F(RcControlsAdjustmentsTest, processRcAdjustmentsSticksInMiddle)
 
 TEST_F(RcControlsAdjustmentsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp)
 {
-    // given
-    controlRateConfig_t controlRateConfig = {
-            .rcRate8 = 90,
-            .rcExpo8 = 0,
-            .thrMid8 = 0,
-            .thrExpo8 = 0,
-            .rates = {0,0,0},
-            .dynThrPID = 0,
-            .rcYawExpo8 = 0,
-            .tpa_breakpoint = 0
-    };
-
-    // and
     memset(rxConfig(), 0, sizeof (*rxConfig()));
     rxConfig()->mincheck = DEFAULT_MIN_CHECK;
     rxConfig()->maxcheck = DEFAULT_MAX_CHECK;

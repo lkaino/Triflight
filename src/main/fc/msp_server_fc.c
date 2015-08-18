@@ -156,6 +156,7 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT] = {
     { "BLACKBOX",  BOXBLACKBOX,  26 },
     { "FAILSAFE",  BOXFAILSAFE,  27 },
     { "AIR MODE",  BOXAIRMODE,   28 },
+    { "TAIL TUNE", BOXTAILTUNE,  29 },
 };
 
 // mask of enabled IDs, calculated on start based on enabled features. boxId_e is used as bit index.
@@ -353,6 +354,10 @@ static void initActiveBoxIds(void)
 #ifdef GTUNE
     ena |= 1 << BOXGTUNE;
 #endif
+
+    if ((mixerConfig()->mixerMode == MIXER_TRI) || (mixerConfig()->mixerMode == MIXER_CUSTOM_TRI)) {
+        ena |= 1 << BOXTAILTUNE;
+    }
 
     // check that all enabled IDs are in boxes array (check is skipped when using findBoxBy<id>() functions
     for(boxId_e boxId = 0;  boxId < CHECKBOX_ITEM_COUNT; boxId++)

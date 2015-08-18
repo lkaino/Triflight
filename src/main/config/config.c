@@ -54,6 +54,7 @@
 #include "telemetry/telemetry.h"
 
 #include "flight/mixer.h"
+#include "flight/mixer_tricopter.h"
 #include "flight/servos.h"
 #include "flight/imu.h"
 #include "flight/failsafe.h"
@@ -86,6 +87,9 @@ STATIC_UNIT_TESTED void resetConf(void)
     featureClearAll();
 
     featureSet(DEFAULT_RX_FEATURE | FEATURE_FAILSAFE | FEATURE_BLACKBOX);
+
+    featureSet(FEATURE_ONESHOT125);
+
 #ifdef DEFAULT_FEATURES
     featureSet(DEFAULT_FEATURES);
 #endif
@@ -166,6 +170,11 @@ static void activateConfig(void)
 
 #ifdef USE_SERVOS
     mixerUseConfigs(servoProfile()->servoConf);
+
+    if ((mixerConfig()->mixerMode == MIXER_TRI) || (mixerConfig()->mixerMode == MIXER_CUSTOM_TRI)) {
+        servoProfile()->servoConf[5].angleAtMin = 40;
+        servoProfile()->servoConf[5].angleAtMax = 40;
+    }
 #endif
 
     recalculateMagneticDeclination();

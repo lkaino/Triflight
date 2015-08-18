@@ -55,13 +55,18 @@
 #include "flight/gtune.h"
 #include "flight/mixer.h"
 
+//! Integrator is disabled when rate error exceeds this limit
+#define LUXFLOAT_INTEGRATOR_DISABLE_LIMIT_DPS (50.0f)
+
 extern float dT;
-extern uint8_t PIDweight[3];
+extern uint8_t PIDweight[3], Iweigth[3];
 extern float lastITermf[3], ITermLimitf[3];
 
 extern biquad_t deltaFilterState[3];
 
 extern uint8_t motorCount;
+
+extern int16_t expectedGyroError[3];
 
 #ifdef BLACKBOX
 extern int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];
@@ -80,29 +85,34 @@ STATIC_UNIT_TESTED int16_t pidLuxFloatCore(int axis, const pidProfile_t *pidProf
 
     SET_PID_LUX_FLOAT_CORE_LOCALS(axis);
 
-    const float rateError = angleRate - gyroRate;
+    const float rateError = angleRate - gyroRate + (float)expectedGyroError[axis];
 
     // -----calculate P component
     float PTerm = luxPTermScale * rateError * pidProfile->P8[axis] * PIDweight[axis] / 100;
     // Constrain YAW by yaw_p_limit value if not servo driven, in that case servolimits apply
+#ifndef USE_SERVOS
     if (axis == YAW && pidProfile->yaw_p_limit && motorCount >= 4) {
         PTerm = constrainf(PTerm, -pidProfile->yaw_p_limit, pidProfile->yaw_p_limit);
     }
+#endif
 
     // -----calculate I component
-    float ITerm = lastITermf[axis] + luxITermScale * rateError * dT * pidProfile->I8[axis];
+    float ITerm = lastITermf[axis] + luxITermScale * rateError * dT * pidProfile->I8[axis] * Iweigth[axis] / 100;
     // limit maximum integrator value to prevent WindUp - accumulating extreme values when system is saturated.
     // I coefficient (I8) moved before integration to make limiting independent from PID settings
     ITerm = constrainf(ITerm, -PID_MAX_I, PID_MAX_I);
-    // Anti windup protection
-    if (rcModeIsActive(BOXAIRMODE)) {
-        if (STATE(ANTI_WINDUP) || motorLimitReached) {
-            ITerm = constrainf(ITerm, -ITermLimitf[axis], ITermLimitf[axis]);
-        } else {
-            ITermLimitf[axis] = ABS(ITerm);
+    if (fabsf(gyroRate) < LUXFLOAT_INTEGRATOR_DISABLE_LIMIT_DPS)
+    {
+        lastITermf[axis] = ITerm;
+    }
+    else
+    {
+        // Shrink only
+        if (fabsf(ITerm) < fabsf(lastITermf[axis]))
+        {
+            lastITermf[axis] = ITerm;
         }
     }
-    lastITermf[axis] = ITerm;
 
     // -----calculate D component
     float DTerm;

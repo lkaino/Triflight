@@ -96,6 +96,7 @@
 #include "flight/imu.h"
 #include "flight/mixer.h"
 #include "flight/servos.h"
+#include "flight/mixer_tricopter.h"
 #include "flight/failsafe.h"
 #include "flight/navigation.h"
 
@@ -480,12 +481,20 @@ void init(void)
     adc_params.enableRSSI = feature(FEATURE_RSSI_ADC);
     adc_params.enableCurrentMeter = feature(FEATURE_CURRENT_METER);
     adc_params.enableExternal1 = false;
+#ifdef USE_SERVOS
+    if ((mixerConfig()->mixerMode == MIXER_TRI) || (mixerConfig()->mixerMode == MIXER_CUSTOM_TRI))
+    {
+        switch (mixerConfig()->tri_servo_feedback)
+        {
+        case TRI_SERVO_FB_RSSI:     adc_params.enableRSSI = true;           break;
+        case TRI_SERVO_FB_CURRENT:  adc_params.enableCurrentMeter = true;   break;
+        case TRI_SERVO_FB_EXT1:     adc_params.enableExternal1 = true;      break;
+        default: break;
+        }
+    }
+#endif
 #ifdef OLIMEXINO
     adc_params.enableExternal1 = true;
-#endif
-#ifdef NAZE
-    // optional ADC5 input on rev.5 hardware
-    adc_params.enableExternal1 = (hardwareRevision >= NAZE32_REV5);
 #endif
 
     adcInit(&adc_params);

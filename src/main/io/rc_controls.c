@@ -76,8 +76,8 @@ int16_t rcCommand[4];           // interval [1000;2000] for THROTTLE and [-500;+
 STATIC_UNIT_TESTED uint32_t rcModeActivationMask; // one bit per mode defined in boxId_e
 
 PG_RESET_TEMPLATE(rcControlsConfig_t, rcControlsConfig,
-    .deadband = 0,
-    .yaw_deadband = 0,
+    .deadband = 5,
+    .yaw_deadband = 9,
     .alt_hold_deadband = 40,
     .alt_hold_fast_change = 1,
     .yaw_control_direction = 1,

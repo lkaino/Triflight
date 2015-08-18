@@ -49,6 +49,7 @@ typedef enum {
     BOXBLACKBOX,
     BOXFAILSAFE,
     BOXAIRMODE,
+    BOXTAILTUNE,
     CHECKBOX_ITEM_COUNT
 } boxId_e;
 

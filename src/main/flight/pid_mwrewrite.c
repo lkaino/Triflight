@@ -53,13 +53,16 @@
 #include "flight/gtune.h"
 #include "flight/mixer.h"
 
+#define REWRITE_INTEGRATOR_DISABLE_LIMIT_DPS (50 * 41 / 10)
 
-extern uint8_t PIDweight[3];
+extern uint8_t PIDweight[3], Iweigth[3];
 extern int32_t lastITerm[3], ITermLimit[3];
 
 extern biquad_t deltaFilterState[3];
 
 extern uint8_t motorCount;
+
+extern int16_t expectedGyroError[3];
 
 #ifdef BLACKBOX
 extern int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];
@@ -73,7 +76,7 @@ STATIC_UNIT_TESTED int16_t pidMultiWiiRewriteCore(int axis, const pidProfile_t *
 
     SET_PID_MULTI_WII_REWRITE_CORE_LOCALS(axis);
 
-    const int32_t rateError = angleRate - gyroRate;
+    const int32_t rateError = angleRate - gyroRate + (expectedGyroError[axis] * 41);
 
     // -----calculate P component
     int32_t PTerm = (rateError * pidProfile->P8[axis] * PIDweight[axis] / 100) >> 7;
@@ -87,19 +90,23 @@ STATIC_UNIT_TESTED int16_t pidMultiWiiRewriteCore(int axis, const pidProfile_t *
     // Precision is critical, as I prevents from long-time drift. Thus, 32 bits integrator (Q19.13 format) is used.
     // Time correction (to avoid different I scaling for different builds based on average cycle time)
     // is normalized to cycle time = 2048 (2^11).
-    int32_t ITerm = lastITerm[axis] + ((rateError * (uint16_t)targetLooptime) >> 11) * pidProfile->I8[axis];
+    int32_t ITerm = lastITerm[axis] + ((rateError * (uint16_t)targetLooptime) >> 11) * pidProfile->I8[axis] * Iweigth[axis] / 100;
     // limit maximum integrator value to prevent WindUp - accumulating extreme values when system is saturated.
     // I coefficient (I8) moved before integration to make limiting independent from PID settings
-    ITerm = constrain(ITerm, (int32_t)(-PID_MAX_I << 13), (int32_t)(PID_MAX_I << 13));
-    // Anti windup protection
-    if (rcModeIsActive(BOXAIRMODE)) {
-        if (STATE(ANTI_WINDUP) || motorLimitReached) {
-            ITerm = constrain(ITerm, -ITermLimit[axis], ITermLimit[axis]);
-        } else {
-            ITermLimit[axis] = ABS(ITerm);
+    ITerm = constrain(ITerm, (int32_t) - GYRO_I_MAX << 13, (int32_t) + GYRO_I_MAX << 13);
+
+    if (ABS(gyroRate) < REWRITE_INTEGRATOR_DISABLE_LIMIT_DPS)
+    {
+        lastITerm[axis] = ITerm;
+    }
+    else
+    {
+        // Shrink only
+        if (ABS(ITerm) < ABS(lastITerm[axis]))
+        {
+            lastITerm[axis] = ITerm;
         }
     }
-    lastITerm[axis] = ITerm;
     ITerm = ITerm >> 13; // take integer part of Q19.13 value
 
     // -----calculate D component

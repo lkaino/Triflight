@@ -41,10 +41,10 @@
 PG_REGISTER_WITH_RESET_TEMPLATE(motorAndServoConfig_t, motorAndServoConfig, PG_MOTOR_AND_SERVO_CONFIG, 0);
 
 PG_RESET_TEMPLATE(motorAndServoConfig_t, motorAndServoConfig,
-    .minthrottle = 1150,
-    .maxthrottle = 1850,
+    .minthrottle = 1100,
+    .maxthrottle = 2000,
     .mincommand = 1000,
     .servoCenterPulse = 1500,
     .motor_pwm_rate = DEFAULT_PWM_RATE,
-    .servo_pwm_rate = 50,
+    .servo_pwm_rate = 250,
 );

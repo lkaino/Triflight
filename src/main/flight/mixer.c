@@ -38,6 +38,7 @@
 #include "sensors/battery.h"
 
 #include "flight/mixer.h"
+#include "flight/mixer_tricopter.h"
 #include "flight/failsafe.h"
 #include "flight/pid.h"
 #include "flight/imu.h"
@@ -525,7 +526,7 @@ void mixTable(pidProfile_t *pidProfile)
     uint32_t i = 0;
     for (i = 0; i < motorCount; i++) {
         motor[i] = motorOutputMin + lrintf(motorOutputRange * (motorMix[i] + (throttle * currentMixer[i].throttle)));
-
+        motor[i] += triGetMotorCorrection(i);
         // Dshot works exactly opposite in lower 3D section.
         if (mixerInversion) {
             motor[i] = motorOutputMin + (motorOutputMax - motor[i]);

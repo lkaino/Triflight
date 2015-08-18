@@ -61,7 +61,7 @@ endif
 # Things that need to be maintained as the source changes
 #
 
-FORKNAME      = betaflight
+FORKNAME      = triflight
 
 # Working directories
 ROOT            := $(patsubst %/,%,$(dir $(lastword $(MAKEFILE_LIST))))
@@ -601,6 +601,7 @@ COMMON_SRC = \
             flight/failsafe.c \
             flight/imu.c \
             flight/mixer.c \
+            flight/mixer_tricopter.c \
             flight/pid.c \
             flight/servos.c \
             io/beeper.c \

@@ -40,6 +40,7 @@
 
 #include "flight/failsafe.h"
 #include "flight/mixer.h"
+#include "flight/mixer_tricopter.h"
 #include "flight/servos.h"
 #include "flight/imu.h"
 #include "flight/navigation.h"
@@ -69,6 +70,7 @@
 #define flight3DConfig(x) (&masterConfig.flight3DConfig)
 #define servoConfig(x) (&masterConfig.servoConfig)
 #define servoMixerConfig(x) (&masterConfig.servoMixerConfig)
+#define triMixerConfig(x) (&masterConfig.triMixerConfig)
 #define gimbalConfig(x) (&masterConfig.gimbalConfig)
 #define channelForwardingConfig(x) (&masterConfig.channelForwardingConfig)
 #define boardAlignment(x) (&masterConfig.boardAlignment)
@@ -136,6 +138,7 @@ typedef struct master_s {
     gimbalConfig_t gimbalConfig;
     // Channel forwarding start channel
     channelForwardingConfig_t channelForwardingConfig;
+    triMixerConfig_t triMixerConfig;
 #endif
 
     boardAlignment_t boardAlignment;

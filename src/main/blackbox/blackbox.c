@@ -44,6 +44,7 @@
 #include "fc/runtime_config.h"
 
 #include "flight/pid.h"
+#include "flight/mixer_tricopter.h"
 
 #include "io/beeper.h"
 
@@ -1029,7 +1030,7 @@ static void loadMainState(timeUs_t currentTimeUs)
 
 #ifdef USE_SERVOS
     //Tail servo for tricopters
-    blackboxCurrent->servo[5] = servo[5];
+    blackboxCurrent->servo[5] = triGetCurrentServoAngle();
 #endif
 }
 

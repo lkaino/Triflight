@@ -112,6 +112,7 @@
 #include "flight/pid.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
+#include "flight/mixer_tricopter.h"
 #include "flight/failsafe.h"
 #include "flight/navigation.h"
 
@@ -365,6 +366,19 @@ void init(void)
     adcConfig()->vbat.enabled = feature(FEATURE_VBAT);
     adcConfig()->currentMeter.enabled = feature(FEATURE_CURRENT_METER);
     adcConfig()->rssi.enabled = feature(FEATURE_RSSI_ADC);
+    if (triMixerInUse()) {
+        if ((triMixerConfig()->tri_servo_feedback == TRI_SERVO_FB_RSSI) &&
+            !feature(FEATURE_RSSI_ADC)) {
+            adcConfig()->rssi.enabled = true;
+        }
+        if ((triMixerConfig()->tri_servo_feedback == TRI_SERVO_FB_CURRENT) &&
+            !feature(FEATURE_CURRENT_METER)) {
+            adcConfig()->currentMeter.enabled = true;
+        }
+        if (triMixerConfig()->tri_servo_feedback == TRI_SERVO_FB_EXT1) {
+            adcConfig()->external1.enabled = true;
+        }
+    }
     adcInit(adcConfig());
 #endif
 

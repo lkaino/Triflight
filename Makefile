@@ -11,6 +11,8 @@
 #
 
 ###############################################################################
+
+
 # Things that the user might override on the commandline
 #
 
@@ -38,21 +40,33 @@ FLASH_SIZE ?=
 
 FORKNAME			 = triflight
 
-VALID_TARGETS	 = NAZE NAZE32PRO OLIMEXINO STM32F3DISCOVERY CHEBUZZF3 CC3D CJMCU EUSTM32F103RC SPRACINGF3 PORT103R SPARKY ALIENWIIF1 ALIENWIIF3 COLIBRI_RACE MOTOLAB RMDO IRCFUSIONF3
+CC3D_TARGETS = CC3D CC3D_OPBL
+
+VALID_TARGETS	 = NAZE NAZE32PRO OLIMEXINO STM32F3DISCOVERY CHEBUZZF3 $(CC3D_TARGETS) CJMCU EUSTM32F103RC SPRACINGF3 PORT103R SPARKY ALIENWIIF1 ALIENWIIF3 COLIBRI_RACE MOTOLAB RMDO IRCFUSIONF3 AFROMINI
+
+# Valid targets for OP VCP support
+VCP_VALID_TARGETS = $(CC3D_TARGETS)
 
 # Valid targets for OP BootLoader support
-OPBL_VALID_TARGETS = CC3D
+OPBL_VALID_TARGETS = CC3D_OPBL
+
+64K_TARGETS  = CJMCU
+128K_TARGETS = ALIENWIIF1 $(CC3D_TARGETS) NAZE OLIMEXINO RMDO AFROMINI
+256K_TARGETS = EUSTM32F103RC PORT103R STM32F3DISCOVERY CHEBUZZF3 NAZE32PRO SPRACINGF3 IRCFUSIONF3 SPARKY ALIENWIIF3 COLIBRI_RACE MOTOLAB
+
+F3_TARGETS = STM32F3DISCOVERY CHEBUZZF3 NAZE32PRO SPRACINGF3 IRCFUSIONF3 SPARKY ALIENWIIF3 COLIBRI_RACE MOTOLAB RMDO
+
 
 # Configure default flash sizes for the targets
 ifeq ($(FLASH_SIZE),)
-ifeq ($(TARGET),$(filter $(TARGET),CJMCU))
+ifeq ($(TARGET),$(filter $(TARGET),$(64K_TARGETS)))
 FLASH_SIZE = 64
-else ifeq ($(TARGET),$(filter $(TARGET),ALIENWIIF1 CC3D NAZE OLIMEXINO RMDO))
+else ifeq ($(TARGET),$(filter $(TARGET),$(128K_TARGETS)))
 FLASH_SIZE = 128
-else ifeq ($(TARGET),$(filter $(TARGET),EUSTM32F103RC PORT103R STM32F3DISCOVERY CHEBUZZF3 NAZE32PRO SPRACINGF3 IRCFUSIONF3 SPARKY ALIENWIIF3 COLIBRI_RACE MOTOLAB))
+else ifeq ($(TARGET),$(filter $(TARGET),$(256K_TARGETS)))
 FLASH_SIZE = 256
 else
-$(error FLASH_SIZE not configured for target)
+$(error FLASH_SIZE not configured for target $(TARGET))
 endif
 endif
 
@@ -72,7 +86,7 @@ VPATH		:= $(SRC_DIR):$(SRC_DIR)/startup
 USBFS_DIR	= $(ROOT)/lib/main/STM32_USB-FS-Device_Driver
 USBPERIPH_SRC = $(notdir $(wildcard $(USBFS_DIR)/src/*.c))
 
-ifeq ($(TARGET),$(filter $(TARGET),STM32F3DISCOVERY CHEBUZZF3 NAZE32PRO SPRACINGF3 IRCFUSIONF3 SPARKY ALIENWIIF3 COLIBRI_RACE MOTOLAB RMDO))
+ifeq ($(TARGET),$(filter $(TARGET),$(F3_TARGETS)))
 
 CSOURCES        := $(shell find $(SRC_DIR) -name '*.c')
 
@@ -180,7 +194,7 @@ INCLUDE_DIRS := $(INCLUDE_DIRS) \
 
 DEVICE_STDPERIPH_SRC = $(STDPERIPH_SRC)
 
-ifeq ($(TARGET),CC3D)
+ifeq ($(TARGET),$(filter $(TARGET), $(VCP_VALID_TARGETS)))
 INCLUDE_DIRS := $(INCLUDE_DIRS) \
 		   $(USBFS_DIR)/inc \
 		   $(ROOT)/src/main/vcp
@@ -213,6 +227,31 @@ TARGET_FLAGS := $(TARGET_FLAGS) -DNAZE -DALIENWII32
 TARGET_DIR = $(ROOT)/src/main/target/NAZE
 endif
 
+ifeq ($(TARGET),$(filter $(TARGET), $(CC3D_TARGETS)))
+TARGET_FLAGS := $(TARGET_FLAGS) -DCC3D 
+TARGET_DIR = $(ROOT)/src/main/target/CC3D
+endif
+
+ifneq ($(filter $(TARGET),$(OPBL_VALID_TARGETS)),)
+OPBL=yes
+endif
+
+ifeq ($(OPBL),yes)
+ifneq ($(filter $(TARGET),$(OPBL_VALID_TARGETS)),)
+TARGET_FLAGS := -DOPBL $(TARGET_FLAGS)
+LD_SCRIPT	 = $(LINKER_DIR)/stm32_flash_f103_$(FLASH_SIZE)k_opbl.ld
+.DEFAULT_GOAL := binary
+else
+$(error OPBL specified with a unsupported target)
+endif
+endif
+
+ifeq ($(TARGET),AFROMINI)
+# AFROMINI is a VARIANT of NAZE being recognized as rev4, but needs to use rev5 config
+TARGET_FLAGS := $(TARGET_FLAGS) -DNAZE -DAFROMINI
+TARGET_DIR = $(ROOT)/src/main/target/NAZE
+endif
+
 INCLUDE_DIRS := $(INCLUDE_DIRS) \
 		    $(TARGET_DIR)
 
@@ -229,6 +268,7 @@ COMMON_SRC = build_config.c \
 		   common/typeconversion.c \
 		   common/encoding.c \
 		   common/filter.c \
+		   scheduler.c \
 		   main.c \
 		   mw.c \
 		   flight/altitudehold.c \
@@ -340,6 +380,8 @@ NAZE_SRC = startup_stm32f10x_md_gcc.S \
 
 ALIENWIIF1_SRC = $(NAZE_SRC)
 
+AFROMINI_SRC = $(NAZE_SRC)
+
 EUSTM32F103RC_SRC = startup_stm32f10x_hd_gcc.S \
 		   drivers/accgyro_adxl345.c \
 		   drivers/accgyro_bma280.c \
@@ -410,16 +452,6 @@ OLIMEXINO_SRC = startup_stm32f10x_md_gcc.S \
 		   drivers/timer_stm32f10x.c \
 		   $(HIGHEND_SRC) \
 		   $(COMMON_SRC)
-
-ifeq ($(OPBL),yes)
-ifneq ($(filter $(TARGET),$(OPBL_VALID_TARGETS)),)
-TARGET_FLAGS := -DOPBL $(TARGET_FLAGS)
-LD_SCRIPT	 = $(LINKER_DIR)/stm32_flash_f103_$(FLASH_SIZE)k_opbl.ld
-.DEFAULT_GOAL := binary
-else
-$(error OPBL specified with a unsupported target)
-endif
-endif
 
 CJMCU_SRC = \
 		   startup_stm32f10x_md_gcc.S \
@@ -537,6 +569,8 @@ CHEBUZZF3_SRC = \
 
 COLIBRI_RACE_SRC = \
 		   $(STM32F30x_COMMON_SRC) \
+		   io/i2c_bst.c \
+		   drivers/bus_bst_stm32f30x.c \
 		   drivers/display_ug2864hsweg01.c \
 		   drivers/accgyro_mpu.c \
 		   drivers/accgyro_mpu6500.c \
@@ -616,6 +650,7 @@ MOTOLAB_SRC = \
 		   drivers/accgyro_mpu.c \
 		   drivers/display_ug2864hsweg01.c \
 		   drivers/accgyro_mpu6050.c \
+		   drivers/accgyro_spi_mpu6000.c \
 		   drivers/barometer_ms5611.c \
 		   drivers/compass_hmc5883l.c \
 		   drivers/serial_usb_vcp.c \
@@ -704,6 +739,8 @@ ifeq ($(filter $(TARGET),$(VALID_TARGETS)),)
 $(error Target '$(TARGET)' is not valid, must be one of $(VALID_TARGETS))
 endif
 
+CC3D_OPBL_SRC     = $(CC3D_SRC)
+
 TARGET_BIN	 = $(BIN_DIR)/$(FORKNAME)_$(TARGET).bin
 TARGET_HEX	 = $(BIN_DIR)/$(FORKNAME)_$(TARGET).hex
 TARGET_ELF	 = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET).elf
@@ -774,6 +811,7 @@ st-flash_$(TARGET): $(TARGET_BIN)
 st-flash: st-flash_$(TARGET)
 
 binary: $(TARGET_BIN)
+hex:    $(TARGET_HEX)
 
 unbrick_$(TARGET): $(TARGET_HEX)
 	stty -F $(SERIAL_DEVICE) raw speed 115200 -crtscts cs8 -parenb -cstopb -ixon

@@ -49,6 +49,7 @@ typedef enum {
     BOXBLACKBOX,
     BOXFAILSAFE,
     BOXTAILTUNE,
+    BOXAIRMODE,
     CHECKBOX_ITEM_COUNT
 } boxId_e;
 
@@ -76,6 +77,13 @@ typedef enum {
     THROTTLE_LOW = 0,
     THROTTLE_HIGH
 } throttleStatus_e;
+
+#define AIRMODEDEADBAND 10
+
+typedef enum {
+    NOT_CENTERED = 0,
+    CENTERED
+} rollPitchStatus_e;
 
 #define ROL_LO (1 << (2 * ROLL))
 #define ROL_CE (3 << (2 * ROLL))
@@ -246,3 +254,4 @@ bool isUsingSticksForArming(void);
 
 int32_t getRcStickDeflection(int32_t axis, uint16_t midrc);
 bool isModeActivationConditionPresent(modeActivationCondition_t *modeActivationConditions, boxId_e modeId);
+rollPitchStatus_e calculateRollPitchCenterStatus(rxConfig_t *rxConfig);

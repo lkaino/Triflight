@@ -21,6 +21,7 @@
 #include <string.h>
 
 #include "platform.h"
+#include "scheduler.h"
 
 #include "common/axis.h"
 #include "common/color.h"
@@ -44,10 +45,12 @@
 #include "drivers/pwm_rx.h"
 #include "drivers/adc.h"
 #include "drivers/bus_i2c.h"
+#include "drivers/bus_bst.h"
 #include "drivers/bus_spi.h"
 #include "drivers/inverter.h"
 #include "drivers/flash_m25p16.h"
 #include "drivers/sonar_hcsr04.h"
+#include "drivers/gyro_sync.h"
 
 #include "rx/rx.h"
 
@@ -92,7 +95,6 @@
 #include "build_config.h"
 #include "debug.h"
 
-extern uint32_t previousTime;
 extern uint8_t motorControlEnable;
 
 #ifdef SOFTSERIAL_LOOPBACK
@@ -119,7 +121,6 @@ void navigationInit(gpsProfile_t *initialGpsProfile, pidProfile_t *pidProfile);
 void imuInit(void);
 void displayInit(rxConfig_t *intialRxConfig);
 void ledStripInit(ledConfig_t *ledConfigsToUse, hsvColor_t *colorsToUse);
-void loop(void);
 void spektrumBind(rxConfig_t *rxConfig);
 const sonarHardware_t *sonarGetHardwareConfiguration(batteryConfig_t *batteryConfig);
 void sonarInit(const sonarHardware_t *sonarHardware);
@@ -170,6 +171,7 @@ void init(void)
     // Configure the Flash Latency cycles and enable prefetch buffer
     SetSysClock(masterConfig.emf_avoidance);
 #endif
+    //i2cSetOverclock(masterConfig.i2c_overclock);
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
     detectHardwareRevision();
@@ -261,9 +263,11 @@ void init(void)
     pwm_params.idlePulse = masterConfig.escAndServoConfig.mincommand;
     if (feature(FEATURE_3D))
         pwm_params.idlePulse = masterConfig.flight3DConfig.neutral3d;
-    if (pwm_params.motorPwmRate > 500 && !masterConfig.use_fast_pwm)
+    pwm_params.useFastPWM = masterConfig.use_fast_pwm ? true : false;
         pwm_params.idlePulse = 0; // brushed motors
-
+#ifdef CC3D
+    pwm_params.useBuzzerP6 = masterConfig.use_buzzer_p6 ? true : false;
+#endif
     pwmRxInit(masterConfig.inputFilteringMode);
 
     pwmOutputConfiguration_t *pwmOutputConfiguration = pwmInit(&pwm_params);
@@ -288,12 +292,20 @@ void init(void)
         .isInverted = false
 #endif
     };
+#ifdef AFROMINI
+    beeperConfig.gpioMode = Mode_Out_PP;   // AFROMINI override
+    beeperConfig.isInverted = true;
+#endif
 #ifdef NAZE
     if (hardwareRevision >= NAZE32_REV5) {
         // naze rev4 and below used opendrain to PNP for buzzer. Rev5 and above use PP to NPN.
         beeperConfig.gpioMode = Mode_Out_PP;
         beeperConfig.isInverted = true;
     }
+#endif
+#ifdef CC3D
+    if (masterConfig.use_buzzer_p6 == 1)
+        beeperConfig.gpioPin = Pin_2;
 #endif
 
     beeperInit(&beeperConfig);
@@ -302,6 +314,11 @@ void init(void)
 #ifdef INVERTER
     initInverter();
 #endif
+
+#ifdef USE_BST
+    bstInit(BST_DEVICE);
+#endif
+
 
 
 #ifdef USE_SPI
@@ -373,7 +390,7 @@ void init(void)
     }
 #endif
 
-    if (!sensorsAutodetect(&masterConfig.sensorAlignmentConfig, masterConfig.acc_hardware, masterConfig.mag_hardware, masterConfig.baro_hardware, currentProfile->mag_declination)) {
+    if (!sensorsAutodetect(&masterConfig.sensorAlignmentConfig,masterConfig.acc_hardware, masterConfig.mag_hardware, masterConfig.baro_hardware, currentProfile->mag_declination, masterConfig.gyro_lpf)) {
         // if gyro was not detected due to whatever reason, we give up now.
         failureMode(FAILURE_MISSING_ACC);
     }
@@ -459,8 +476,6 @@ void init(void)
     initBlackbox();
 #endif
 
-    previousTime = micros();
-
     if (masterConfig.mixerMode == MIXER_GIMBAL) {
         accSetCalibrationCycles(CALIBRATING_ACC_CYCLES);
     }
@@ -529,8 +544,48 @@ void processLoopback(void) {
 int main(void) {
     init();
 
+    /* Setup scheduler */
+    rescheduleTask(TASK_GYROPID, targetLooptime - INTERRUPT_WAIT_TIME);
+
+    setTaskEnabled(TASK_GYROPID, true);
+    setTaskEnabled(TASK_ACCEL, sensors(SENSOR_ACC));
+    setTaskEnabled(TASK_SERIAL, true);
+    setTaskEnabled(TASK_BEEPER, true);
+    setTaskEnabled(TASK_BATTERY, feature(FEATURE_VBAT) || feature(FEATURE_CURRENT_METER));
+    setTaskEnabled(TASK_RX, true);
+#ifdef GPS
+    setTaskEnabled(TASK_GPS, feature(FEATURE_GPS));
+#endif
+#ifdef MAG
+    setTaskEnabled(TASK_COMPASS, sensors(SENSOR_MAG));
+#endif
+#ifdef BARO
+    setTaskEnabled(TASK_BARO, sensors(SENSOR_BARO));
+#endif
+#ifdef SONAR
+    setTaskEnabled(TASK_SONAR, sensors(SENSOR_SONAR));
+#endif
+#if defined(BARO) || defined(SONAR)
+    setTaskEnabled(TASK_ALTITUDE, sensors(SENSOR_BARO) || sensors(SENSOR_SONAR));
+#endif
+#ifdef DISPLAY
+    setTaskEnabled(TASK_DISPLAY, feature(FEATURE_DISPLAY));
+#endif
+#ifdef TELEMETRY
+    setTaskEnabled(TASK_TELEMETRY, feature(FEATURE_TELEMETRY));
+#endif
+#ifdef LED_STRIP
+    setTaskEnabled(TASK_LEDSTRIP, feature(FEATURE_LED_STRIP));
+#endif
+#ifdef USE_BST
+    setTaskEnabled(TASK_BST_PROCESS, true);
+#endif
+
     while (1) {
-        loop();
+        scheduler();
+#ifdef USE_BST
+	   bstMasterWriteLoop();
+#endif
         processLoopback();
     }
 }

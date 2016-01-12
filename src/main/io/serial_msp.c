@@ -357,6 +357,7 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT + 1] = {
     { BOXBLACKBOX, "BLACKBOX;", 26 },
     { BOXFAILSAFE, "FAILSAFE;", 27 },
     { BOXTAILTUNE, "TAILTUNE;", 28 },
+    { BOXAIRMODE, "AIR MODE;", 29 },
     { CHECKBOX_ITEM_COUNT, NULL, 0xFF }
 };
 
@@ -648,6 +649,8 @@ void mspInit(serialConfig_t *serialConfig)
         activeBoxIds[activeBoxIdCount++] = BOXHORIZON;
     }
 
+    activeBoxIds[activeBoxIdCount++] = BOXAIRMODE;
+
     if (sensors(SENSOR_BARO)) {
         activeBoxIds[activeBoxIdCount++] = BOXBARO;
     }
@@ -838,7 +841,8 @@ static bool processOutCommand(uint8_t cmdMSP)
             IS_ENABLED(ARMING_FLAG(ARMED)) << BOXARM |
             IS_ENABLED(IS_RC_MODE_ACTIVE(BOXBLACKBOX)) << BOXBLACKBOX |
             IS_ENABLED(FLIGHT_MODE(FAILSAFE_MODE)) << BOXFAILSAFE |
-            IS_ENABLED(FLIGHT_MODE(BOXTAILTUNE)) << BOXTAILTUNE;
+            IS_ENABLED(FLIGHT_MODE(BOXTAILTUNE)) << BOXTAILTUNE |
+            IS_ENABLED(IS_RC_MODE_ACTIVE(BOXAIRMODE)) << BOXAIRMODE;
         for (i = 0; i < activeBoxIdCount; i++) {
             int flag = (tmp & (1 << activeBoxIds[i]));
             if (flag)
@@ -1791,13 +1795,19 @@ static bool processInCommand(void)
             // 0xFF -> preinitialize the Passthrough
             // switch all motor lines HI
             usb1WireInitialize();
+            // reply the count of ESC found
+            headSerialReply(1);
+            serialize8(escCount);
+
             // and come back right afterwards
             // rem: App: Wait at least appx. 500 ms for BLHeli to jump into
             // bootloader mode before try to connect any ESC
+
+            return true;
         }
         else {
             // Check for channel number 0..ESC_COUNT-1
-            if (i < ESC_COUNT) {
+            if (i < escCount) {
                 // because we do not come back after calling usb1WirePassthrough
                 // proceed with a success reply first
                 headSerialReply(0);
@@ -1806,10 +1816,10 @@ static bool processInCommand(void)
                 waitForSerialPortToFinishTransmitting(currentPort->port);
                 // Start to activate here
                 // motor 1 => index 0
-                
+
                 // search currentPort portIndex
                 /* next lines seems to be unnecessary, because the currentPort always point to the same mspPorts[portIndex]
-                uint8_t portIndex;	
+                uint8_t portIndex;
 				for (portIndex = 0; portIndex < MAX_MSP_PORT_COUNT; portIndex++) {
 					if (currentPort == &mspPorts[portIndex]) {
 						break;
@@ -1825,7 +1835,7 @@ static bool processInCommand(void)
                 mspAllocateSerialPorts(&masterConfig.serialConfig);
                 /* restore currentPort and mspSerialPort
                 setCurrentPort(&mspPorts[portIndex]); // not needed same index will be restored
-                */ 
+                */
                 // former used MSP uart is active again
                 // restore MSP_SET_1WIRE as current command for correct headSerialReply(0)
                 currentPort->cmdMSP = MSP_SET_1WIRE;

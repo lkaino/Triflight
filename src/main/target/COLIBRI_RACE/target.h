@@ -18,6 +18,8 @@
 #pragma once
 
 #define TARGET_BOARD_IDENTIFIER "CLBR"
+#define BST_DEVICE_NAME "COLIBRI RACE"
+#define BST_DEVICE_NAME_LENGTH 12
 
 #define LED0_GPIO   GPIOC
 #define LED0_PIN    Pin_15
@@ -55,12 +57,9 @@
 
 #define USABLE_TIMER_CHANNEL_COUNT 11
 
-#define EXTI_CALLBACK_HANDLER_COUNT 1 // MPU data ready
-
 #define GYRO
 #define USE_GYRO_MPU6500
 #define USE_GYRO_SPI_MPU6500
-
 #define GYRO_MPU6500_ALIGN CW270_DEG
 
 #define ACC
@@ -68,12 +67,20 @@
 #define USE_ACC_SPI_MPU6500
 #define ACC_MPU6500_ALIGN CW270_DEG
 
+// MPU6500 interrupt
+//#define DEBUG_MPU_DATA_READY_INTERRUPT
+#define USE_MPU_DATA_READY_SIGNAL
+#define ENSURE_MPU_DATA_READY_IS_LOW
+
+// External I2C BARO
 #define BARO
 #define USE_BARO_MS5611
 
+// External I2C MAG
 #define MAG
 #define USE_MAG_HMC5883
 #define USE_MAG_AK8975
+//#define MAG_AK8975_ALIGN CW0_DEG_FLIP
 
 #define BEEPER
 #define LED0
@@ -107,6 +114,9 @@
 #define UART3_TX_PINSOURCE  GPIO_PinSource10
 #define UART3_RX_PINSOURCE  GPIO_PinSource11
 
+#define USE_ESCSERIAL
+#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
+
 #define USE_I2C
 #define I2C_DEVICE (I2CDEV_2)
 
@@ -120,6 +130,11 @@
 #define I2C2_SDA_PIN         GPIO_Pin_10
 #define I2C2_SDA_PIN_SOURCE  GPIO_PinSource10
 #define I2C2_SDA_CLK_SOURCE  RCC_AHBPeriph_GPIOA
+
+#define USE_BST
+#define BST_DEVICE (BSTDEV_1)
+/* Configure the CRC peripheral to use the polynomial x8 + x7 + x6 + x4 + x2 + 1 */
+#define BST_CRC_POLYNOM			 0xD5
 
 #define USE_ADC
 
@@ -142,11 +157,6 @@
 #define EXTERNAL1_ADC_GPIO          GPIOC
 #define EXTERNAL1_ADC_GPIO_PIN      GPIO_Pin_3
 #define EXTERNAL1_ADC_CHANNEL       ADC_Channel_9
-
-// MPU6500 interrupt
-//#define DEBUG_MPU_DATA_READY_INTERRUPT
-#define USE_MPU_DATA_READY_SIGNAL
-#define ENSURE_MPU_DATA_READY_IS_LOW
 
 #define BLACKBOX
 #define GPS

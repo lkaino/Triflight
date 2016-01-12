@@ -66,12 +66,6 @@ typedef enum {
     ACCPROC_COPY
 } accProcessorState_e;
 
-typedef enum {
-    ONLY_GYRO = 0,
-    ONLY_ACC,
-    ACC_AND_GYRO
-} imuUpdateMode_e;
-
 typedef struct accProcessor_s {
     accProcessorState_e state;
 } accProcessor_t;
@@ -85,6 +79,8 @@ void imuConfigure(
 );
 
 void calculateEstimatedAltitude(uint32_t currentTime);
+void imuUpdateAccelerometer(rollAndPitchTrims_t *accelerometerTrims);
+void imuUpdateGyroAndAttitude(void);
 float calculateThrottleAngleScale(uint16_t throttle_correction_angle);
 int16_t calculateThrottleAngleCorrection(uint8_t throttle_correction_value);
 float calculateAccZLowPassFilterRCTimeConstant(float accz_lpf_cutoff);
@@ -92,4 +88,5 @@ float calculateAccZLowPassFilterRCTimeConstant(float accz_lpf_cutoff);
 int16_t imuCalculateHeading(t_fp_vector *vec);
 
 void imuResetAccelerationSum(void);
-void imuUpdate(rollAndPitchTrims_t *accelerometerTrims, uint8_t imuUpdateSensors);
+void imuUpdateGyro(void);
+void imuUpdateAcc(rollAndPitchTrims_t *accelerometerTrims);

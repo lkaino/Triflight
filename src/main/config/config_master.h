@@ -38,6 +38,9 @@ typedef struct master_t {
     uint16_t motor_pwm_rate;                // The update rate of motor outputs (50-498Hz)
     uint16_t servo_pwm_rate;                // The update rate of servo outputs (50-498Hz)
     uint8_t use_fast_pwm;                   // Use fast PWM implementation when oneshot enabled
+#ifdef CC3D
+    uint8_t use_buzzer_p6;
+#endif
 
     // global sensor-related stuff
 
@@ -47,7 +50,7 @@ typedef struct master_t {
     int8_t yaw_control_direction;           // change control direction of yaw (inverted, normal)
     uint8_t acc_hardware;                   // Which acc hardware to use on boards with more than one device
     uint8_t acc_for_fast_looptime;          // shorten acc processing time by using 1 out of 9 samples. For combination with fast looptimes.
-    uint16_t gyro_lpf;                      // gyro LPF setting - values are driver specific, in case of invalid number, a reasonable default ~30-40HZ is chosen.
+    uint8_t gyro_lpf;                      // gyro LPF setting - values are driver specific, in case of invalid number, a reasonable default ~30-40HZ is chosen.
     uint16_t dcm_kp;                        // DCM filter proportional gain ( x 10000)
     uint16_t dcm_ki;                        // DCM filter integral gain ( x 10000)
 

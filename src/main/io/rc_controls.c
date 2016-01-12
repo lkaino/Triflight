@@ -59,7 +59,6 @@
 
 #include "mw.h"
 
-
 static escAndServoConfig_t *escAndServoConfig;
 static pidProfile_t *pidProfile;
 
@@ -106,7 +105,6 @@ bool isUsingSticksForArming(void)
     return isUsingSticksToArm;
 }
 
-
 bool areSticksInApModePosition(uint16_t ap_mode)
 {
     return ABS(rcCommand[ROLL]) < ap_mode && ABS(rcCommand[PITCH]) < ap_mode;
@@ -120,6 +118,18 @@ throttleStatus_e calculateThrottleStatus(rxConfig_t *rxConfig, uint16_t deadband
         return THROTTLE_LOW;
 
     return THROTTLE_HIGH;
+}
+
+rollPitchStatus_e calculateRollPitchCenterStatus(rxConfig_t *rxConfig)
+{
+    if (feature(FEATURE_3D)) // TODO
+        return CENTERED;
+    else if (!feature(FEATURE_3D)
+            && ((rcData[PITCH] < (rxConfig->midrc + AIRMODEDEADBAND)) && (rcData[PITCH] > (rxConfig->midrc -AIRMODEDEADBAND)))
+            && ((rcData[ROLL] < (rxConfig->midrc + AIRMODEDEADBAND)) && (rcData[ROLL] > (rxConfig->midrc -AIRMODEDEADBAND))))
+        return CENTERED;
+
+    return NOT_CENTERED;
 }
 
 void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStatus, bool retarded_arm, bool disarm_kill_switch)
@@ -150,6 +160,7 @@ void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStat
     if (!isUsingSticksToArm) {
 
         if (IS_RC_MODE_ACTIVE(BOXARM)) {
+            rcDisarmTicks = 0;
             // Arming via ARM BOX
             if (throttleStatus == THROTTLE_LOW) {
                 if (ARMING_FLAG(OK_TO_ARM)) {
@@ -168,8 +179,6 @@ void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStat
                         mwDisarm();
                     }
                 }
-            } else {
-                rcDisarmTicks = 0;
             }
         }
     }

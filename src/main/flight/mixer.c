@@ -71,6 +71,7 @@ static rxConfig_t *rxConfig;
 static mixerMode_e currentMixerMode;
 static motorMixer_t currentMixer[MAX_SUPPORTED_MOTORS];
 
+bool motorLimitReached = false;
 
 #ifdef USE_SERVOS
 static uint8_t servoRuleCount = 0;
@@ -763,46 +764,92 @@ void mixTable(void)
         axisPID[YAW] = constrain(axisPID[YAW], -mixerConfig->yaw_jump_prevention_limit - ABS(rcCommand[YAW]), mixerConfig->yaw_jump_prevention_limit + ABS(rcCommand[YAW]));
     }
 
-    // motors for non-servo mixes
-    for (i = 0; i < motorCount; i++) {
-        motor[i] =
-            rcCommand[THROTTLE] * currentMixer[i].throttle +
-            axisPID[PITCH] * currentMixer[i].pitch +
-            axisPID[ROLL] * currentMixer[i].roll +
-            -mixerConfig->yaw_motor_direction * axisPID[YAW] * currentMixer[i].yaw;
+    if (!(IS_RC_MODE_ACTIVE(BOXAIRMODE)) && !(feature(FEATURE_3D))) {
+        motorLimitReached = false; // It  always needs to be reset so it can't get stuck when flipping back and fourth
+        // motors for non-servo mixes
+        for (i = 0; i < motorCount; i++) {
+            motor[i] =
+                rcCommand[THROTTLE] * currentMixer[i].throttle +
+                axisPID[PITCH] * currentMixer[i].pitch +
+                axisPID[ROLL] * currentMixer[i].roll +
+                -mixerConfig->yaw_motor_direction * axisPID[YAW] * currentMixer[i].yaw;
+         
+	    if (currentMixerMode == MIXER_TRI)
+	    {
+                motor[i] += triGetMotorCorrection(i);
+            }
+	}
+    } else {
+        // Initial mixer concept by bdoiron74 reused and optimized for Air Mode
+        int16_t rollPitchYawMix[MAX_SUPPORTED_MOTORS];
+        int16_t rollPitchYawMixMax = 0; // assumption: symetrical about zero.
+        int16_t rollPitchYawMixMin = 0;
 
-        if (currentMixerMode == MIXER_TRI)
-        {
-            motor[i] += triGetMotorCorrection(i);
+        // Find roll/pitch/yaw desired output
+        for (i = 0; i < motorCount; i++) {
+            rollPitchYawMix[i] =
+                axisPID[PITCH] * currentMixer[i].pitch +
+                axisPID[ROLL] * currentMixer[i].roll +
+                -mixerConfig->yaw_motor_direction * axisPID[YAW] * currentMixer[i].yaw;
+
+            if (rollPitchYawMix[i] > rollPitchYawMixMax) rollPitchYawMixMax = rollPitchYawMix[i];
+            if (rollPitchYawMix[i] < rollPitchYawMixMin) rollPitchYawMixMin = rollPitchYawMix[i];
+        }
+
+        // Scale roll/pitch/yaw uniformly to fit within throttle range
+        int16_t rollPitchYawMixRange = rollPitchYawMixMax - rollPitchYawMixMin;
+        int16_t throttleRange = escAndServoConfig->maxthrottle - escAndServoConfig->minthrottle;
+        int16_t throttleMin, throttleMax;
+
+        if (rollPitchYawMixRange > throttleRange) {
+            motorLimitReached = true;
+            for (i = 0; i < motorCount; i++) {
+                rollPitchYawMix[i] = (rollPitchYawMix[i] * throttleRange) / rollPitchYawMixRange;
+            }
+            throttleMin = escAndServoConfig->minthrottle;
+            throttleMax = escAndServoConfig->maxthrottle;
+        } else {
+            motorLimitReached = false;
+            throttleMin = escAndServoConfig->minthrottle + (rollPitchYawMixRange / 2);
+            throttleMax = escAndServoConfig->maxthrottle - (rollPitchYawMixRange / 2);
+        }
+
+        // Now add in the desired throttle, but keep in a range that doesn't clip adjusted
+        // roll/pitch/yaw. This could move throttle down, but also up for those low throttle flips.
+        for (i = 0; i < motorCount; i++) {
+            motor[i] = rollPitchYawMix[i] + constrainf(rcCommand[THROTTLE] * currentMixer[i].throttle, throttleMin, throttleMax);
         }
     }
 
     if (ARMING_FLAG(ARMED)) {
 
         bool isFailsafeActive = failsafeIsActive();
+        int16_t maxThrottleDifference = 0;
 
-        // Find the maximum motor output.
-        int16_t maxMotor = motor[0];
-        for (i = 1; i < motorCount; i++) {
-            // If one motor is above the maxthrottle threshold, we reduce the value
-            // of all motors by the amount of overshoot.  That way, only one motor
-            // is at max and the relative power of each motor is preserved.
-            if (motor[i] > maxMotor) {
-                maxMotor = motor[i];
+        if (!(IS_RC_MODE_ACTIVE(BOXAIRMODE)) && !(feature(FEATURE_3D))) {
+            // Find the maximum motor output.
+            int16_t maxMotor = motor[0];
+            for (i = 1; i < motorCount; i++) {
+                // If one motor is above the maxthrottle threshold, we reduce the value
+                // of all motors by the amount of overshoot.  That way, only one motor
+                // is at max and the relative power of each motor is preserved.
+                if (motor[i] > maxMotor) {
+                    maxMotor = motor[i];
+                }
+            }
+
+            if (maxMotor > escAndServoConfig->maxthrottle) {
+                maxThrottleDifference = maxMotor - escAndServoConfig->maxthrottle;
             }
         }
-
-        int16_t maxThrottleDifference = 0;
-        if (maxMotor > escAndServoConfig->maxthrottle) {
-            maxThrottleDifference = maxMotor - escAndServoConfig->maxthrottle;
-        }
-
         for (i = 0; i < motorCount; i++) {
-            // this is a way to still have good gyro corrections if at least one motor reaches its max.
-            motor[i] -= maxThrottleDifference;
+            if (!(IS_RC_MODE_ACTIVE(BOXAIRMODE)) && !(feature(FEATURE_3D))) {
+                // this is a way to still have good gyro corrections if at least one motor reaches its max.
+                motor[i] -= maxThrottleDifference;
+            }
 
             if (feature(FEATURE_3D)) {
-                if (mixerConfig->pid_at_min_throttle
+                if ((IS_RC_MODE_ACTIVE(BOXAIRMODE))
                         || rcData[THROTTLE] <= rxConfig->midrc - flight3DConfig->deadband3d_throttle
                         || rcData[THROTTLE] >= rxConfig->midrc + flight3DConfig->deadband3d_throttle) {
                     if (rcData[THROTTLE] > rxConfig->midrc) {
@@ -824,11 +871,9 @@ void mixTable(void)
                     // If we're at minimum throttle and FEATURE_MOTOR_STOP enabled,
                     // do not spin the motors.
                     motor[i] = constrain(motor[i], escAndServoConfig->minthrottle, escAndServoConfig->maxthrottle);
-                    if ((rcData[THROTTLE]) < rxConfig->mincheck) {
+                    if (((rcData[THROTTLE]) < rxConfig->mincheck)) {
                         if (feature(FEATURE_MOTOR_STOP)) {
                             motor[i] = escAndServoConfig->mincommand;
-                        } else if (mixerConfig->pid_at_min_throttle == 0) {
-                            motor[i] = escAndServoConfig->minthrottle;
                         }
                     }
                 }

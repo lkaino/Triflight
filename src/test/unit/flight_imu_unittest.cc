@@ -52,6 +52,9 @@ extern "C" {
 #define DOWNWARDS_THRUST true
 #define UPWARDS_THRUST false
 
+TEST(FlightImuTest, WARNING_NO_TEST_DEFINED_WARNING_NO_TEST_DEFINED_WARNING_NO_TEST_DEFINED_WARNING_NO_TEST_DEFINED)
+{
+}
 /*
 TEST(FlightImuTest, TestCalculateHeading)
 {

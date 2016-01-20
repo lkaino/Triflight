@@ -32,11 +32,9 @@ extern "C" {
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
 
-
-TEST(ATest, test) {
-    ASSERT_TRUE(false);
+TEST(TriMixerUnittest, WARNING_NO_TEST_DEFINED_WARNING_NO_TEST_DEFINED_WARNING_NO_TEST_DEFINED_WARNING_NO_TEST_DEFINED)
+{
 }
-
 
 //STUBS
 extern "C" {
@@ -45,20 +43,20 @@ extern "C" {
   uint8_t armingFlags;
   int16_t rcCommand[4];
   uint16_t getCurrentMinthrottle(void){ return 0; }
-  void beeper(beeperMode_e mode){}
-  bool isRcAxisWithinDeadband(int32_t axis) { return true;}
+  void beeper(beeperMode_e mode){UNUSED(mode);}
+  bool isRcAxisWithinDeadband(int32_t axis) { UNUSED(axis); return true;}
   uint32_t rcModeActivationMask;
   uint16_t flightModeFlags = 0;
-uint16_t disableFlightMode(flightModeFlags_e mask){return 0;}
+uint16_t disableFlightMode(flightModeFlags_e mask){ UNUSED(mask); return 0;}
 int32_t axisPID_I[3];
-void beeperConfirmationBeeps(uint8_t beepCount){}
-uint16_t enableFlightMode(flightModeFlags_e mask){ return 0; }
+void beeperConfirmationBeeps(uint8_t beepCount){UNUSED(beepCount);}
+uint16_t enableFlightMode(flightModeFlags_e mask){ UNUSED(mask); return 0; }
 
 typedef struct master_s{
 } master_t;
 
 master_t masterConfig;
 
-throttleStatus_e calculateThrottleStatus(rxConfig_t *rxConfig, uint16_t deadband3d_throttle) { return (throttleStatus_e)0;}
+throttleStatus_e calculateThrottleStatus(rxConfig_t *rxConfig, uint16_t deadband3d_throttle) { UNUSED(rxConfig); UNUSED(deadband3d_throttle); return (throttleStatus_e)0;}
 }
 

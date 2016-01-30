@@ -44,6 +44,8 @@ extern "C" {
     #include "io/escservo.h"
     #include "io/gimbal.h"
     #include "io/rc_controls.h"
+    #include "io/beeper.h"
+    #include "config/runtime_config.h"
 
     extern uint8_t servoCount;
     void forwardAuxChannelsToServos(uint8_t firstServoIndex);
@@ -376,19 +378,45 @@ TEST_F(CustomMixerIntegrationTest, TestCustomMixer)
 // STUBS
 
 extern "C" {
-rollAndPitchInclination_t inclination;
+attitudeEulerAngles_t attitude;
+float dT;
+uint32_t sysTickUptime;
+
+// Return system uptime in milliseconds (rollover in 49 days)
+uint32_t millis(void)
+{
+    return sysTickUptime;
+}
+
+uint8_t armingFlags;
+int16_t rcCommand[4];
+uint16_t getCurrentMinthrottle(void){ return 0; }
+
+void beeper(beeperMode_e mode){UNUSED(mode);}
+bool isRcAxisWithinDeadband(int32_t axis) { UNUSED(axis); return true;}
+uint32_t rcModeActivationMask;
+uint16_t flightModeFlags = 0;
+uint16_t disableFlightMode(flightModeFlags_e mask){UNUSED(mask); return 0;}
+int32_t axisPID_I[3];
+void beeperConfirmationBeeps(uint8_t beepCount){UNUSED(beepCount);}
+uint16_t enableFlightMode(flightModeFlags_e mask){ UNUSED(mask); return 0; }
+
+typedef struct master_s{
+} master_t;
+
+master_t masterConfig;
+
+throttleStatus_e calculateThrottleStatus(rxConfig_t *rxConfig, uint16_t deadband3d_throttle) { UNUSED(rxConfig); UNUSED(deadband3d_throttle); return (throttleStatus_e)0;}
+
 rxRuntimeConfig_t rxRuntimeConfig;
 
 int16_t axisPID[XYZ_AXIS_COUNT];
-int16_t rcCommand[4];
 int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 
-uint32_t rcModeActivationMask;
+
 int16_t debug[DEBUG16_VALUE_COUNT];
 
 uint8_t stateFlags;
-uint16_t flightModeFlags;
-uint8_t armingFlags;
 
 void delay(uint32_t) {}
 

@@ -243,8 +243,10 @@ protected:
             .thrExpo8 = 0,
             .rates = {0, 0, 0},
             .dynThrPID = 0,
+			.tpa_yaw_rate=0,
             .rcYawExpo8 = 0,
-            .tpa_breakpoint = 0
+            .tpa_breakpoint = 0,
+			.tpa_yaw_breakpoint = 0
     };
 
     virtual void SetUp() {
@@ -305,8 +307,10 @@ TEST_F(RcControlsAdjustmentsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp
             .thrExpo8 = 0,
             .rates = {0,0,0},
             .dynThrPID = 0,
+			.tpa_yaw_rate = 0,
             .rcYawExpo8 = 0,
-            .tpa_breakpoint = 0
+            .tpa_breakpoint = 0,
+			.tpa_yaw_breakpoint = 0
     };
 
     // and

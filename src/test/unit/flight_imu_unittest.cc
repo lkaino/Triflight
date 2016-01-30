@@ -52,10 +52,14 @@ extern "C" {
 #define DOWNWARDS_THRUST true
 #define UPWARDS_THRUST false
 
-
+TEST(FlightImuTest, WARNING_NO_TEST_DEFINED_WARNING_NO_TEST_DEFINED_WARNING_NO_TEST_DEFINED_WARNING_NO_TEST_DEFINED)
+{
+}
+/*
 TEST(FlightImuTest, TestCalculateHeading)
 {
     //TODO: Add test cases using the Z dimension.
+	//TODO: add test cases. imuCalculateHeading is no more
     t_fp_vector north = {.A={1.0f, 0.0f, 0.0f}};
     EXPECT_EQ(imuCalculateHeading(&north), 0);
 
@@ -70,7 +74,9 @@ TEST(FlightImuTest, TestCalculateHeading)
 
     t_fp_vector north_east = {.A={1.0f, 1.0f, 0.0f}};
     EXPECT_EQ(imuCalculateHeading(&north_east), 45);
+
 }
+*/
 
 // STUBS
 
@@ -78,6 +84,10 @@ extern "C" {
 uint32_t rcModeActivationMask;
 int16_t rcCommand[4];
 int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
+
+uint8_t GPS_numSat;
+uint16_t GPS_speed;                 // speed in 0.1m/s
+uint16_t GPS_ground_course;
 
 uint16_t acc_1G;
 int16_t heading;
@@ -89,10 +99,17 @@ int16_t debug[DEBUG16_VALUE_COUNT];
 uint8_t stateFlags;
 uint16_t flightModeFlags;
 uint8_t armingFlags;
+uint32_t sysTickUptime;
 
 int32_t sonarAlt;
 int16_t accADC[XYZ_AXIS_COUNT];
 int16_t gyroADC[XYZ_AXIS_COUNT];
+
+// Return system uptime in milliseconds (rollover in 49 days)
+uint32_t millis(void)
+{
+    return sysTickUptime;
+}
 
 
 uint16_t enableFlightMode(flightModeFlags_e mask)

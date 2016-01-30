@@ -104,6 +104,13 @@ $(OBJECT_DIR)/common/maths.o : \
 	@mkdir -p $(dir $@)
 	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/common/maths.c -o $@
 
+$(OBJECT_DIR)/common/filter.o : \
+	$(USER_DIR)/common/filter.c \
+	$(USER_DIR)/common/filter.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/common/filter.c -o $@
 
 $(OBJECT_DIR)/sensors/battery.o : $(USER_DIR)/sensors/battery.c $(USER_DIR)/sensors/battery.h $(GTEST_HEADERS)
 	@mkdir -p $(dir $@)
@@ -165,6 +172,7 @@ $(OBJECT_DIR)/flight_imu_unittest : \
 	$(OBJECT_DIR)/flight/altitudehold.o \
 	$(OBJECT_DIR)/flight_imu_unittest.o \
 	$(OBJECT_DIR)/common/maths.o \
+	$(OBJECT_DIR)/common/filter.o \
 	$(OBJECT_DIR)/gtest_main.a
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
@@ -351,6 +359,7 @@ $(OBJECT_DIR)/lowpass_unittest.o : \
 $(OBJECT_DIR)/lowpass_unittest : \
 	$(OBJECT_DIR)/flight/lowpass.o \
 	$(OBJECT_DIR)/lowpass_unittest.o \
+	$(OBJECT_DIR)/common/maths.o \
 	$(OBJECT_DIR)/gtest_main.a
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
@@ -373,6 +382,7 @@ $(OBJECT_DIR)/flight_mixer_unittest.o : \
 
 $(OBJECT_DIR)/flight_mixer_unittest : \
 	$(OBJECT_DIR)/flight/mixer.o \
+	$(OBJECT_DIR)/flight/mixer_tricopter.o \
 	$(OBJECT_DIR)/flight_mixer_unittest.o \
 	$(OBJECT_DIR)/common/maths.o \
 	$(OBJECT_DIR)/gtest_main.a
@@ -555,6 +565,30 @@ $(OBJECT_DIR)/alignsensor_unittest : \
 	$(OBJECT_DIR)/common/maths.o \
 	$(OBJECT_DIR)/sensors/boardalignment.o \
 	$(OBJECT_DIR)/alignsensor_unittest.o \
+	$(OBJECT_DIR)/gtest_main.a
+
+	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
+
+$(OBJECT_DIR)/flight/mixer_tricopter.o : \
+	$(USER_DIR)/flight/mixer_tricopter.c \
+	$(USER_DIR)/flight/mixer_tricopter.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/flight/mixer_tricopter.c -o $@
+
+$(OBJECT_DIR)/mixer_tricopter_unittest.o : \
+	$(TEST_DIR)/mixer_tricopter_unittest.cc \
+	$(USER_DIR)/flight/mixer_tricopter.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/mixer_tricopter_unittest.cc -o $@
+
+$(OBJECT_DIR)/mixer_tricopter_unittest : \
+	$(OBJECT_DIR)/common/maths.o \
+	$(OBJECT_DIR)/flight/mixer_tricopter.o  \
+	$(OBJECT_DIR)/mixer_tricopter_unittest.o \
 	$(OBJECT_DIR)/gtest_main.a
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@

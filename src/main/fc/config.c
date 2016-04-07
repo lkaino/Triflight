@@ -93,11 +93,21 @@
 #include "config/config_master.h"
 #include "config/feature.h"
 
+#include "target.h"
+
 #ifndef DEFAULT_RX_FEATURE
 #define DEFAULT_RX_FEATURE FEATURE_RX_PARALLEL_PWM
 #endif
 #ifndef RX_SPI_DEFAULT_PROTOCOL
 #define RX_SPI_DEFAULT_PROTOCOL 0
+#endif
+
+#ifndef DEFAULT_SERVO_FEEDBACK_SOURCE
+#define DEFAULT_SERVO_FEEDBACK_SOURCE TRI_SERVO_FB_VIRTUAL
+#endif
+
+#ifndef AMPERAGE_SCALE_DEFAULT
+#define AMPERAGE_SCALE_DEFAULT  400 // for Allegro ACS758LCB-100U (40mV/A)
 #endif
 
 #define BRUSHED_MOTORS_PWM_RATE 16000
@@ -256,7 +266,7 @@ void resetTriMixerConfig(triMixerConfig_t *triMixerConfig)
 {
     triMixerConfig->tri_motor_acc_yaw_correction = 1500;
     triMixerConfig->tri_motor_acceleration = 0.18f;
-    triMixerConfig->tri_servo_feedback = TRI_SERVO_FB_VIRTUAL;
+    triMixerConfig->tri_servo_feedback = DEFAULT_SERVO_FEEDBACK_SOURCE;
     triMixerConfig->tri_servo_max_adc = 0;
     triMixerConfig->tri_servo_mid_adc = 0;
     triMixerConfig->tri_servo_min_adc = 0;
@@ -434,7 +444,7 @@ void resetBatteryConfig(batteryConfig_t *batteryConfig)
     batteryConfig->vbathysteresis = 1;
     batteryConfig->batteryMeterType = BATTERY_SENSOR_ADC;
     batteryConfig->currentMeterOffset = 0;
-    batteryConfig->currentMeterScale = 400; // for Allegro ACS758LCB-100U (40mV/A)
+    batteryConfig->currentMeterScale = AMPERAGE_SCALE_DEFAULT;
     batteryConfig->batteryCapacity = 0;
     batteryConfig->currentMeterType = CURRENT_SENSOR_ADC;
     batteryConfig->batterynotpresentlevel = 55; // VBAT below 5.5 V will be igonored

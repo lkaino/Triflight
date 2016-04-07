@@ -153,10 +153,11 @@
 
 #define ADC_CHANNEL_COUNT 3
 
-#define ADC_BATTERY     ADC_CHANNEL0
-#define ADC_AMPERAGE     ADC_CHANNEL1
-#define ADC_RSSI        ADC_CHANNEL2
+#define ADC_BATTERY                 ADC_CHANNEL0
+#define ADC_AMPERAGE                ADC_CHANNEL1
+#define ADC_RSSI                    ADC_CHANNEL2
 
+#define AMPERAGE_SCALE_DEFAULT      360
 
 #define LED_STRIP // LED strip configuration using PWM motor output pin 5.
 #define LED_STRIP_TIMER TIM16
@@ -205,3 +206,5 @@
 #define TARGET_IO_PORTB 0xffff
 #define TARGET_IO_PORTC (BIT(13)|BIT(14)|BIT(15))
 #define TARGET_IO_PORTF (BIT(0)|BIT(1))
+
+#define DEFAULT_SERVO_FEEDBACK_SOURCE TRI_SERVO_FB_RSSI

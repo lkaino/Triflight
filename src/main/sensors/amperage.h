@@ -21,6 +21,10 @@
 #define MAX_AMPERAGE_METERS 2 // physical & virtual
 #endif
 
+#ifndef AMPERAGE_SCALE_DEFAULT
+#define AMPERAGE_SCALE_DEFAULT  400
+#endif
+
 typedef struct amperageMeterConfig_s {
     int16_t scale;             // scale the current sensor output voltage to milliamps. Value in 1/10th mV/A
     uint16_t offset;            // offset of the current sensor in millivolt steps

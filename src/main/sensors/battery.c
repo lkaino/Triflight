@@ -39,6 +39,7 @@
 #include "io/beeper.h"
 
 #include "sensors/battery.h"
+#include "target.h"
 
 
 #define VBATT_PRESENT_THRESHOLD_MV    10
@@ -61,6 +62,12 @@ static biquad_t vbatFilterState;
 
 PG_REGISTER_WITH_RESET_TEMPLATE(batteryConfig_t, batteryConfig, PG_BATTERY_CONFIG, 0);
 
+#ifndef DEFAULT_CURRENT_METER_SCALE
+#define DEFAULT_CURRENT_METER_SCALE 400 // for Allegro ACS758LCB-100U (40mV/A)
+#endif
+
+#define CURRENT_METER_SCALE DEFAULT_CURRENT_METER_SCALE
+
 PG_RESET_TEMPLATE(batteryConfig_t, batteryConfig,
     .vbatscale = VBAT_SCALE_DEFAULT,
     .vbatresdivval = VBAT_RESDIVVAL_DEFAULT,
@@ -68,7 +75,7 @@ PG_RESET_TEMPLATE(batteryConfig_t, batteryConfig,
     .vbatmaxcellvoltage = 43,
     .vbatmincellvoltage = 33,
     .vbatwarningcellvoltage = 35,
-    .currentMeterScale = 400, // for Allegro ACS758LCB-100U (40mV/A)
+    .currentMeterScale = DEFAULT_CURRENT_METER_SCALE,
     .currentMeterType = CURRENT_SENSOR_ADC,
 );
 

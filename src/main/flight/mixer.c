@@ -61,6 +61,8 @@
 
 #include "mixer_tricopter.h"
 
+#include "target.h"
+
 //#define MIXER_DEBUG
 
 uint8_t motorCount;
@@ -82,6 +84,10 @@ PG_RESET_TEMPLATE(motor3DConfig_t, motor3DConfig,
     .neutral3d = 1460,
 );
 
+#ifndef DEFAULT_SERVO_FEEDBACK_SOURCE
+#define DEFAULT_SERVO_FEEDBACK_SOURCE TRI_SERVO_FB_VIRTUAL
+#endif
+
 
 #ifdef USE_SERVOS
 PG_RESET_TEMPLATE(mixerConfig_t, mixerConfig,
@@ -98,7 +104,7 @@ PG_RESET_TEMPLATE(mixerConfig_t, mixerConfig,
     .tri_servo_min_adc = 0,
     .tri_servo_mid_adc = 0,
     .tri_servo_max_adc = 0,
-    .tri_servo_feedback = TRI_SERVO_FB_VIRTUAL,
+    .tri_servo_feedback = DEFAULT_SERVO_FEEDBACK_SOURCE,
     .tri_motor_acc_yaw_correction = 10,
     .tri_motor_acceleration = 0.18f,
 );

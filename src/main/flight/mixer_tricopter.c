@@ -183,6 +183,8 @@ static int16_t tailMotorDecelerationDelay_angle;
 static servoParam_t * gpTailServoConf;
 static int16_t *gpTailServo;
 static mixerConfig_t *gpMixerConfig;
+static uint8_t currentIYaw;
+static float currentIYawf;
 
 static uint16_t tailServoADC = 0;
 static AdcChannel tailServoADCChannel = ADC_EXTERNAL1;
@@ -508,6 +510,13 @@ static void tailTuneModeThrustTorque(struct thrustTorque_t *pTT, const bool isTh
             pTT->state = TT_WAIT;
             pTT->servoAvgAngle.sum = 0;
             pTT->servoAvgAngle.numOf = 0;
+
+            // reset the I term for yaw. If the bench tail tune was bad we should notice a short yaw twist
+            currentIYaw = currentProfile->pidProfile.I8[FD_YAW];
+            currentIYawf = currentProfile->pidProfile.I_f[FD_YAW];
+            currentProfile->pidProfile.I8[FD_YAW] = 0;
+            currentProfile->pidProfile.I_f[FD_YAW] = 0.0f;
+            pidResetErrorGyroYaw();
         }
         break;
     case TT_WAIT:
@@ -527,6 +536,9 @@ static void tailTuneModeThrustTorque(struct thrustTorque_t *pTT, const bool isTh
                 // Beep every second until start
                 beeper(BEEPER_BAT_LOW);
                 pTT->startBeepDelay_ms += 1000;
+                // Set the I parameters back to the user settings
+                currentProfile->pidProfile.I8[FD_YAW] = currentIYaw;
+                currentProfile->pidProfile.I_f[FD_YAW] = currentIYawf;
             }
         }
         else

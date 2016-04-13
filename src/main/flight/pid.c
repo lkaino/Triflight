@@ -98,6 +98,12 @@ void pidResetErrorGyro(void)
     }
 }
 
+void pidResetErrorGyroYaw(void)
+{
+    errorGyroI[FD_YAW] = 0;
+    errorGyroIf[FD_YAW] = 0.0f;
+}
+
 float scaleItermToRcInput(int axis) {
     float rcCommandDeflection = (float)rcCommand[axis] / 500.0f;
     static float iTermScaler[3] = {1.0f, 1.0f, 1.0f};

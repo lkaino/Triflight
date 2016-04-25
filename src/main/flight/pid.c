@@ -98,10 +98,10 @@ void pidResetErrorGyro(void)
     }
 }
 
-void pidResetErrorGyroYaw(void)
+void pidResetErrorGyroAxis(const flight_dynamics_index_t axis)
 {
-    errorGyroI[FD_YAW] = 0;
-    errorGyroIf[FD_YAW] = 0.0f;
+    errorGyroI[axis] = 0;
+    errorGyroIf[axis] = 0.0f;
 }
 
 float scaleItermToRcInput(int axis) {

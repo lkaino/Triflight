@@ -98,6 +98,12 @@ void pidResetErrorGyro(void)
     }
 }
 
+void pidResetErrorGyroAxis(const flight_dynamics_index_t axis)
+{
+    errorGyroI[axis] = 0;
+    errorGyroIf[axis] = 0.0f;
+}
+
 float scaleItermToRcInput(int axis) {
     float rcCommandDeflection = (float)rcCommand[axis] / 500.0f;
     static float iTermScaler[3] = {1.0f, 1.0f, 1.0f};

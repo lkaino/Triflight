@@ -423,6 +423,7 @@ static void triTailTuneStep(servoParam_t *pServoConf, int16_t *pServoVal)
 
 STATIC_UNIT_TESTED void tailTuneModeThrustTorque(thrustTorque_t *pTT, const bool isThrottleHigh)
 {
+    static uint16_t beepCount = 20;
     switch(pTT->state)
     {
     case TT_IDLE:
@@ -467,21 +468,25 @@ STATIC_UNIT_TESTED void tailTuneModeThrustTorque(thrustTorque_t *pTT, const bool
             isRcAxisWithinDeadband(ROLL) &&
             isRcAxisWithinDeadband(PITCH) &&
             isRcAxisWithinDeadband(YAW) &&
-            (fabsf(gyroADC[FD_YAW] * gyro.scale) <= 4.0f)) // deg/s
+            (fabsf(gyroADC[FD_YAW] * gyro.scale) <= 3.5f)) // deg/s
         {
             if (IsDelayElapsed_ms(pTT->timestamp_ms, 250))
             {
                 // RC commands have been within deadbands for 250 ms
-                if (IsDelayElapsed_ms(pTT->lastAdjTime_ms, 10))
+                if (IsDelayElapsed_ms(pTT->lastAdjTime_ms, 20))
                 {
                     pTT->lastAdjTime_ms = millis();
 
                     pTT->servoAvgAngle.sum += triGetCurrentServoAngle();
                     pTT->servoAvgAngle.numOf++;
 
-                    beeperConfirmationBeeps(1);
+                    if (--beepCount == 0)
+                    {
+                        beeperConfirmationBeeps(1);
+                        beepCount = 20;
+                    }
 
-                    if (pTT->servoAvgAngle.numOf >= 300)
+                    if (pTT->servoAvgAngle.numOf >= 500)
                     {
                         beeper(BEEPER_READY_BEEP);
                         pTT->state = TT_WAIT_FOR_DISARM;
@@ -578,7 +583,7 @@ static void tailTuneModeServoSetup(struct servoSetup_t *pSS, servoParam_t *pServ
         if (!isRcAxisWithinDeadband(YAW))
         {
             pSS->servoVal += -1.0f * (float)rcCommand[YAW] * dT;
-            constrain(pSS->servoVal, 950, 2050);
+            //constrain(pSS->servoVal, 950, 2050);  // In C this is a no-op since the return value isn't used. Obviously works without
             *pSS->pLimitToAdjust = pSS->servoVal;
         }
         break;

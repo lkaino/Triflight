@@ -423,7 +423,6 @@ static void triTailTuneStep(servoParam_t *pServoConf, int16_t *pServoVal)
 
 STATIC_UNIT_TESTED void tailTuneModeThrustTorque(thrustTorque_t *pTT, const bool isThrottleHigh)
 {
-    static uint16_t beepCount = 20;
     switch(pTT->state)
     {
     case TT_IDLE:
@@ -480,10 +479,9 @@ STATIC_UNIT_TESTED void tailTuneModeThrustTorque(thrustTorque_t *pTT, const bool
                     pTT->servoAvgAngle.sum += triGetCurrentServoAngle();
                     pTT->servoAvgAngle.numOf++;
 
-                    if (--beepCount == 0)
+                    if ((pTT->servoAvgAngle.numOf & 0x1f) == 0x00) // once every 32 times
                     {
                         beeperConfirmationBeeps(1);
-                        beepCount = 20;
                     }
 
                     if (pTT->servoAvgAngle.numOf >= 500)
@@ -583,7 +581,7 @@ static void tailTuneModeServoSetup(struct servoSetup_t *pSS, servoParam_t *pServ
         if (!isRcAxisWithinDeadband(YAW))
         {
             pSS->servoVal += -1.0f * (float)rcCommand[YAW] * dT;
-            //constrain(pSS->servoVal, 950, 2050);  // In C this is a no-op since the return value isn't used. Obviously works without
+            pSS->servoVal = constrain(pSS->servoVal, 950, 2050);
             *pSS->pLimitToAdjust = pSS->servoVal;
         }
         break;

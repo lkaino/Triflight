@@ -622,7 +622,11 @@ static void tailTuneModeServoSetup(struct servoSetup_t *pSS, servoParam_t *pServ
         if (!isRcAxisWithinDeadband(YAW))
         {
             pSS->servoVal += -1.0f * (float)rcCommand[YAW] * dT;
-            pSS->servoVal = constrain(pSS->servoVal, 950, 2050);
+            if (pSS->servoVal < 950) {
+                pSS->servoVal = 950;
+            } else if (pSS->servoVal > 2050) {
+                pSS->servoVal = 2050;
+            }
             *pSS->pLimitToAdjust = pSS->servoVal;
         }
         break;

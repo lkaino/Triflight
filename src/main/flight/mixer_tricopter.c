@@ -118,6 +118,7 @@ static uint16_t getPitchCorrectionMaxPhaseShift(int16_t servoAngle,
         int16_t motorDecelerationDelayAngle,
         int16_t motorDirectionChangeAngle);
 static uint16_t getLinearServoValue(servoParam_t *servoConf, int16_t constrainedPIDOutput);
+static uint16_t getNormalServoValue(servoParam_t *servoConf, int16_t PIDOutput);
 static uint16_t virtualServoStep(uint16_t currentAngle, int16_t servoSpeed, float dT, servoParam_t *servoConf, uint16_t servoValue);
 static uint16_t feedbackServoStep(triMixerConfig_t *mixerConf, uint16_t tailServoADC);
 STATIC_UNIT_TESTED void tailTuneModeThrustTorque(thrustTorque_t *pTT, const bool isThrottleHigh);
@@ -131,15 +132,21 @@ static int16_t scaleAUXChannel(u8 channel, int16_t scale);
 #endif
 static int16_t dynamicYaw(int16_t PIDoutput);
 static void tailMotorStep(int16_t setpoint, float dT);
+static int8_t triServoDirection(void);
 #endif
 
 PG_REGISTER_WITH_RESET_FN(triMixerConfig_t, triMixerConfig, PG_TRICOPTER_CONFIG, 0);
+#include "target.h"
+
+#ifndef DEFAULT_SERVO_FEEDBACK_SOURCE
+#define DEFAULT_SERVO_FEEDBACK_SOURCE TRI_SERVO_FB_VIRTUAL
+#endif
 
 void pgResetFn_triMixerConfig(triMixerConfig_t *triMixerConfig)
 {
     triMixerConfig->tri_motor_acc_yaw_correction = 1500;
     triMixerConfig->tri_motor_acceleration = 18;
-    triMixerConfig->tri_servo_feedback = TRI_SERVO_FB_VIRTUAL;
+    triMixerConfig->tri_servo_feedback = DEFAULT_SERVO_FEEDBACK_SOURCE;
     triMixerConfig->tri_servo_max_adc = 0;
     triMixerConfig->tri_servo_mid_adc = 0;
     triMixerConfig->tri_servo_min_adc = 0;
@@ -214,6 +221,12 @@ static uint16_t getLinearServoValue(servoParam_t *servoConf, int16_t constrained
     return getServoValueAtAngle(servoConf, correctedAngle);
 }
 
+static uint16_t getNormalServoValue(servoParam_t *servoConf, int16_t constrainedPIDOutput)
+{
+    const int16_t angle = TRI_TAIL_SERVO_ANGLE_MID + constrainedPIDOutput * tailServoMaxAngle / 1000;
+    return getServoValueAtAngle(servoConf, angle);
+}
+
 void triServoMixer(int16_t PIDoutput)
 {
     // Dynamic yaw expects input [-1000, 1000]
@@ -228,10 +241,20 @@ void triServoMixer(int16_t PIDoutput)
         tailServoADC = pt1FilterApply4(&feedbackFilter, adcGetChannel(tailServoADCChannel), 70, getdT());
     }
 
+    // Dynamic yaw expects input [-1000, 1000]
+    PIDoutput = constrain(PIDoutput, -1000, 1000);
+
     // Linear servo logic only in armed state
     if (ARMING_FLAG(ARMED))
     {
+        // Scale the PID output based on tail motor speed (thrust)
+        PIDoutput = dynamicYaw(PIDoutput);
+
         *gpTailServo = getLinearServoValue(gpTailServoConf, PIDoutput);
+    }
+    else
+    {
+        *gpTailServo = getNormalServoValue(gpTailServoConf, PIDoutput);
     }
 
     triTailTuneStep(gpTailServoConf, gpTailServo);
@@ -295,18 +318,52 @@ static uint16_t getServoValueAtAngle(servoParam_t *servoConf, uint16_t angle)
     const int16_t servoMid = servoConf->middle;
     uint16_t servoValue;
 
-    if (angle < TRI_TAIL_SERVO_ANGLE_MID)
+    if (angle == TRI_TAIL_SERVO_ANGLE_MID)
     {
-        const int16_t servoMin = servoConf->min;
-        servoValue = (int32_t)(angle - tailServoMaxAngle) * (servoMid - servoMin) / (TRI_TAIL_SERVO_ANGLE_MID - tailServoMaxAngle) + servoMin;
-    }
-    else if (angle > TRI_TAIL_SERVO_ANGLE_MID)
-    {
-        servoValue = (int32_t)(angle - TRI_TAIL_SERVO_ANGLE_MID) * (servoConf->max - servoMid) / tailServoMaxAngle + servoMid;
+        servoValue = servoMid;
     }
     else
     {
-        servoValue = servoMid;
+        const int8_t direction = triServoDirection();
+        const uint16_t angleRange = tailServoMaxAngle;
+        uint16_t angleDiff;
+        int8_t servoRange; //!< -1 == min-mid, 1 == mid-max
+
+        if (angle < TRI_TAIL_SERVO_ANGLE_MID)
+        {
+            angleDiff = TRI_TAIL_SERVO_ANGLE_MID - angle;
+            if (direction > 0)
+            {
+                servoRange = -1;
+            }
+            else
+            {
+                servoRange = 1;
+            }
+        }
+        else
+        {
+            angleDiff = angle - TRI_TAIL_SERVO_ANGLE_MID;
+            if (direction > 0)
+            {
+                servoRange = 1;
+            }
+            else
+            {
+                servoRange = -1;
+            }
+        }
+
+        if (servoRange < 0)
+        {
+            const int16_t servoMin = servoConf->min;
+            servoValue = servoMid - angleDiff * (servoMid - servoMin) / angleRange;
+        }
+        else
+        {
+            const int16_t servoMax = servoConf->max;
+            servoValue = servoMid + angleDiff * (servoMax - servoMid) / angleRange;
+        }
     }
 
     return servoValue;
@@ -619,7 +676,7 @@ static void tailTuneModeServoSetup(struct servoSetup_t *pSS, servoParam_t *pServ
     case SS_SETUP:
         if (!isRcAxisWithinDeadband(YAW))
         {
-            pSS->servoVal += -1.0f * (float)rcCommand[YAW] * getdT();
+            pSS->servoVal += triServoDirection() * -1.0f * (float)rcCommand[YAW] * getdT();
             pSS->servoVal = constrainf(pSS->servoVal, 900.0f, 2100.0f);
             *pSS->pLimitToAdjust = pSS->servoVal;
         }
@@ -929,5 +986,10 @@ static void tailMotorStep(int16_t setpoint, float dT)
      */
     static pt1Filter_t motorFilter;
     tailMotorVirtual = pt1FilterApply4(&motorFilter, current, 20, dT);
+}
+
+static int8_t triServoDirection(void)
+{
+    return (int8_t)servoDirection(SERVO_RUDDER, INPUT_STABILIZED_YAW);
 }
 

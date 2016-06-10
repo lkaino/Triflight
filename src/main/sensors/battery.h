@@ -68,8 +68,10 @@ batteryState_e getBatteryState(void);
 const  char * getBatteryStateString(void);
 void updateBattery(void);
 void batteryInit(batteryConfig_t *initialBatteryConfig);
+batteryConfig_t *batteryConfig;
 
-void updateCurrentMeter(int32_t lastUpdateAt, throttleStatus_e throttleStatus);
+
+void updateCurrentMeter(int32_t lastUpdateAt, rxConfig_t *rxConfig, uint16_t deadband3d_throttle);
 int32_t currentMeterToCentiamps(uint16_t src);
 
 uint8_t calculateBatteryPercentage(void);

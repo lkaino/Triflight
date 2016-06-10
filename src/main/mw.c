@@ -775,10 +775,7 @@ void taskUpdateBattery(void)
 
         if (ibatTimeSinceLastServiced >= IBATINTERVAL) {
             ibatLastServiced = currentTime;
-
-            throttleStatus_e throttleStatus = calculateThrottleStatus(&masterConfig.rxConfig, masterConfig.flight3DConfig.deadband3d_throttle);
-
-            updateCurrentMeter(ibatTimeSinceLastServiced, throttleStatus);
+            updateCurrentMeter(ibatTimeSinceLastServiced, &masterConfig.rxConfig, masterConfig.flight3DConfig.deadband3d_throttle);
         }
     }
 }

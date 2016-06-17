@@ -83,6 +83,7 @@ typedef struct mixerConfig_s {
     float servo_lowpass_freq;             // lowpass servo filter frequency selection; 1/1000ths of loop freq
     int8_t servo_lowpass_enable;            // enable/disable lowpass filter
     int16_t tri_tail_motor_thrustfactor;
+    int8_t tri_tailtune_limit;				// yaw decidegrees/s, criteria for armed in-flight tail tune
     int16_t tri_tail_servo_speed;
     uint8_t tri_servo_feedback;
     uint16_t tri_servo_min_adc;

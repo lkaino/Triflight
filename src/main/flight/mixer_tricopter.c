@@ -508,7 +508,7 @@ STATIC_UNIT_TESTED void tailTuneModeThrustTorque(thrustTorque_t *pTT, const bool
             isRcAxisWithinDeadband(ROLL) &&
             isRcAxisWithinDeadband(PITCH) &&
             isRcAxisWithinDeadband(YAW) &&
-            (fabsf(gyroADC[FD_YAW] * gyro.scale) <= 3.5f)) // deg/s
+            (fabsf(gyroADC[FD_YAW] * gyro.scale) <= ((float) gpMixerConfig->tri_tailtune_limit) / 10.0f)) // deg/s
         {
             if (IsDelayElapsed_ms(pTT->timestamp_ms, 250))
             {
@@ -542,6 +542,7 @@ STATIC_UNIT_TESTED void tailTuneModeThrustTorque(thrustTorque_t *pTT, const bool
     case TT_WAIT_FOR_DISARM:
         if (!ARMING_FLAG(ARMED))
         {
+            // currentProfile->servoConf[6].max = pTT->servoAvgAngle.sum / pTT->servoAvgAngle.numOf; // uncomment for debugging
             float averageServoAngle = pTT->servoAvgAngle.sum / 10.0f / pTT->servoAvgAngle.numOf;
             if (averageServoAngle > 90.5f && averageServoAngle < 120.f) {
                 averageServoAngle -= 90.0f;

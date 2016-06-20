@@ -477,6 +477,7 @@ STATIC_UNIT_TESTED void tailTuneModeThrustTorque(thrustTorque_t *pTT, const bool
             pTT->state = TT_WAIT;
             pTT->servoAvgAngle.sum = 0;
             pTT->servoAvgAngle.numOf = 0;
+            pTT->tailTuneGyroLimit = 3.5f;
         }
         break;
     case TT_WAIT:
@@ -508,7 +509,7 @@ STATIC_UNIT_TESTED void tailTuneModeThrustTorque(thrustTorque_t *pTT, const bool
             isRcAxisWithinDeadband(ROLL) &&
             isRcAxisWithinDeadband(PITCH) &&
             isRcAxisWithinDeadband(YAW) &&
-            (fabsf(gyroADC[FD_YAW] * gyro.scale) <= ((float) gpMixerConfig->tri_tailtune_limit) / 10.0f)) // deg/s
+            (fabsf(gyroADC[FD_YAW] * gyro.scale) <= pTT->tailTuneGyroLimit)) // deg/s
         {
             if (IsDelayElapsed_ms(pTT->timestamp_ms, 250))
             {
@@ -536,13 +537,26 @@ STATIC_UNIT_TESTED void tailTuneModeThrustTorque(thrustTorque_t *pTT, const bool
         }
         else
         {
+            if (IsDelayElapsed_ms(pTT->lastAdjTime_ms, 1000))
+            {
+                // There has not been any valid samples in 1 s, try to loosen the criteria a little
+                pTT->tailTuneGyroLimit += 0.1f;
+                pTT->lastAdjTime_ms = millis();
+                if (pTT->tailTuneGyroLimit > 7.0f)
+                {
+                    // Time to get here without any good samples is 35 s, with 50% of the time using tailTuneGyroLimit >5.25 deg/s.
+                    // If there are not enough samples by now it is a fail.
+                    pTT->state = TT_FAIL;
+                }
+            }
             pTT->timestamp_ms = millis();
         }
         break;
     case TT_WAIT_FOR_DISARM:
         if (!ARMING_FLAG(ARMED))
         {
-            // currentProfile->servoConf[6].max = pTT->servoAvgAngle.sum / pTT->servoAvgAngle.numOf; // uncomment for debugging
+            currentProfile->servoConf[6].max = pTT->servoAvgAngle.sum / pTT->servoAvgAngle.numOf; // uncomment for debugging
+            currentProfile->servoConf[6].min = pTT->tailTuneGyroLimit * 10.0f; // uncomment for debugging
             float averageServoAngle = pTT->servoAvgAngle.sum / 10.0f / pTT->servoAvgAngle.numOf;
             if (averageServoAngle > 90.5f && averageServoAngle < 120.f) {
                 averageServoAngle -= 90.0f;

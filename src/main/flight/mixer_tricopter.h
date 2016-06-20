@@ -123,6 +123,7 @@ typedef struct thrustTorque_s {
     uint32_t startBeepDelay_ms;
     uint32_t timestamp_ms;
     uint32_t lastAdjTime_ms;
+    float  tailTuneGyroLimit;
     servoAvgAngle_t servoAvgAngle;
 } thrustTorque_t;
 

@@ -95,7 +95,7 @@
 #define TRI_YAW_FORCE_PRECISION     (1000)
 
 #define IsDelayElapsed_us(timestamp_us, delay_us) ((uint32_t)(micros() - timestamp_us) >= delay_us)
-#define IsDelayElapsed_ms(timestamp_ms, delay_ms) ((uint32_t)(millis() - timestamp_ms) >= delay_ms)
+#define IsDelayElapsed_ms(timestamp_ms, delay_ms) ((uint32_t)(now - timestamp_ms) >= delay_ms)
 
 #endif
 
@@ -464,6 +464,7 @@ static void triTailTuneStep(servoParam_t *pServoConf, int16_t *pServoVal)
 
 STATIC_UNIT_TESTED void tailTuneModeThrustTorque(thrustTorque_t *pTT, const bool isThrottleHigh)
 {
+    uint32_t now = millis();
     switch(pTT->state)
     {
     case TT_IDLE:
@@ -472,8 +473,9 @@ STATIC_UNIT_TESTED void tailTuneModeThrustTorque(thrustTorque_t *pTT, const bool
         {
             beeper(BEEPER_BAT_LOW);
             pTT->startBeepDelay_ms = 1000;
-            pTT->timestamp_ms = millis();
-            pTT->lastAdjTime_ms = millis();
+            pTT->timestamp_ms = now;
+            pTT->timestamp2_ms = now;
+            pTT->lastAdjTime_ms = now;
             pTT->state = TT_WAIT;
             pTT->servoAvgAngle.sum = 0;
             pTT->servoAvgAngle.numOf = 0;
@@ -490,7 +492,7 @@ STATIC_UNIT_TESTED void tailTuneModeThrustTorque(thrustTorque_t *pTT, const bool
                 // Longer beep when starting
                 beeper(BEEPER_BAT_CRIT_LOW);
                 pTT->state = TT_ACTIVE;
-                pTT->timestamp_ms = millis();
+                pTT->timestamp_ms = now;
             }
             else if (IsDelayElapsed_ms(pTT->timestamp_ms, pTT->startBeepDelay_ms))
             {
@@ -505,58 +507,61 @@ STATIC_UNIT_TESTED void tailTuneModeThrustTorque(thrustTorque_t *pTT, const bool
         }
         break;
     case TT_ACTIVE:
-        if (isThrottleHigh &&
+        if (!(isThrottleHigh &&
             isRcAxisWithinDeadband(ROLL) &&
             isRcAxisWithinDeadband(PITCH) &&
-            isRcAxisWithinDeadband(YAW) &&
-            (fabsf(gyroADC[FD_YAW] * gyro.scale) <= pTT->tailTuneGyroLimit)) // deg/s
+            isRcAxisWithinDeadband(YAW)))
         {
-            if (IsDelayElapsed_ms(pTT->timestamp_ms, 250))
+            pTT->timestamp_ms = now;
+        }
+        if (fabsf(gyroADC[FD_YAW] * gyro.scale) > pTT->tailTuneGyroLimit)
+        {
+            pTT->timestamp2_ms = now;
+        }
+        if (IsDelayElapsed_ms(pTT->timestamp_ms, 250))
+        {
+            // RC commands have been within deadbands for 250 ms
+            if (IsDelayElapsed_ms(pTT->timestamp2_ms, 250))
             {
-                // RC commands have been within deadbands for 250 ms
-                if (IsDelayElapsed_ms(pTT->lastAdjTime_ms, 20))
-                {
-                    pTT->lastAdjTime_ms = millis();
-
+                // Gyro has also been stable for 250 ms
+                if (IsDelayElapsed_ms(pTT->lastAdjTime_ms, 20)) {
+                    pTT->lastAdjTime_ms = now;
                     pTT->servoAvgAngle.sum += triGetCurrentServoAngle();
                     pTT->servoAvgAngle.numOf++;
-
                     if ((pTT->servoAvgAngle.numOf & 0x1f) == 0x00) // once every 32 times
                     {
                         beeperConfirmationBeeps(1);
                     }
-
                     if (pTT->servoAvgAngle.numOf >= 500)
                     {
                         beeper(BEEPER_READY_BEEP);
                         pTT->state = TT_WAIT_FOR_DISARM;
-                        pTT->timestamp_ms = millis();
+                        pTT->timestamp_ms = now;
                     }
                 }
             }
-        }
-        else
-        {
-            if (IsDelayElapsed_ms(pTT->lastAdjTime_ms, 1000))
+            else if (IsDelayElapsed_ms(pTT->lastAdjTime_ms, 1000))
             {
-                // There has not been any valid samples in 1 s, try to loosen the criteria a little
+                // Sticks are OK but there has not been any valid samples in 1 s, try to loosen the gyro criteria a little
                 pTT->tailTuneGyroLimit += 0.1f;
-                pTT->lastAdjTime_ms = millis();
-                if (pTT->tailTuneGyroLimit > 7.0f)
+                pTT->lastAdjTime_ms = now;
+                if (pTT->tailTuneGyroLimit > 8.0f)
                 {
-                    // Time to get here without any good samples is 35 s, with 50% of the time using tailTuneGyroLimit >5.25 deg/s.
                     // If there are not enough samples by now it is a fail.
                     pTT->state = TT_FAIL;
                 }
             }
-            pTT->timestamp_ms = millis();
         }
         break;
     case TT_WAIT_FOR_DISARM:
         if (!ARMING_FLAG(ARMED))
         {
-            currentProfile->servoConf[6].max = pTT->servoAvgAngle.sum / pTT->servoAvgAngle.numOf; // uncomment for debugging
-            currentProfile->servoConf[6].min = pTT->tailTuneGyroLimit * 10.0f; // uncomment for debugging
+			/*
+			// uncomment for debugging
+			currentProfile->servoConf[6].max = pTT->servoAvgAngle.sum / pTT->servoAvgAngle.numOf;
+			currentProfile->servoConf[6].min = pTT->tailTuneGyroLimit * 10.0f;
+			saveConfigAndNotify();
+			*/
             float averageServoAngle = pTT->servoAvgAngle.sum / 10.0f / pTT->servoAvgAngle.numOf;
             if (averageServoAngle > 90.5f && averageServoAngle < 120.f) {
                 averageServoAngle -= 90.0f;
@@ -571,14 +576,14 @@ STATIC_UNIT_TESTED void tailTuneModeThrustTorque(thrustTorque_t *pTT, const bool
             {
                 pTT->state = TT_FAIL;
             }
-            pTT->timestamp_ms = millis();
+            pTT->timestamp_ms = now;
         }
         else
         {
             if (IsDelayElapsed_ms(pTT->timestamp_ms, 2000))
             {
                 beeper(BEEPER_READY_BEEP);
-                pTT->timestamp_ms = millis();
+                pTT->timestamp_ms = now;
             }
         }
         break;
@@ -586,14 +591,14 @@ STATIC_UNIT_TESTED void tailTuneModeThrustTorque(thrustTorque_t *pTT, const bool
         if (IsDelayElapsed_ms(pTT->timestamp_ms, 2000))
         {
             beeper(BEEPER_READY_BEEP);
-            pTT->timestamp_ms = millis();
+            pTT->timestamp_ms = now;
         }
         break;
     case TT_FAIL:
         if (IsDelayElapsed_ms(pTT->timestamp_ms, 2000))
         {
             beeper(BEEPER_ACC_CALIBRATION_FAIL);
-            pTT->timestamp_ms = millis();
+            pTT->timestamp_ms = now;
         }
         break;
     }
@@ -601,7 +606,7 @@ STATIC_UNIT_TESTED void tailTuneModeThrustTorque(thrustTorque_t *pTT, const bool
 
 static void tailTuneModeServoSetup(struct servoSetup_t *pSS, servoParam_t *pServoConf, int16_t *pServoVal)
 {
-
+    uint32_t now = millis();
     // Check mode select
     if (isRcAxisWithinDeadband(PITCH) && (rcCommand[ROLL] < -100))
     {
@@ -705,7 +710,7 @@ static void tailTuneModeServoSetup(struct servoSetup_t *pSS, servoParam_t *pServ
                 }
             }
 
-            pSS->cal.timestamp_ms = millis();
+            pSS->cal.timestamp_ms = now;
             pSS->cal.avg.sum = 0;
             pSS->cal.avg.numOf = 0;
             pSS->cal.done = false;
@@ -739,7 +744,7 @@ static void tailTuneModeServoSetup(struct servoSetup_t *pSS, servoParam_t *pServ
                 {
                     if (!pSS->cal.waitingServoToStop)
                     {
-                        pSS->cal.avg.sum += millis() - pSS->cal.timestamp_ms;
+                        pSS->cal.avg.sum += now - pSS->cal.timestamp_ms;
                         pSS->cal.avg.numOf++;
 
                         if (pSS->cal.avg.numOf > 5)
@@ -752,13 +757,13 @@ static void tailTuneModeServoSetup(struct servoSetup_t *pSS, servoParam_t *pServ
                             pSS->servoVal = pServoConf->middle;
                         }
 
-                        pSS->cal.timestamp_ms = millis();
+                        pSS->cal.timestamp_ms = now;
                         pSS->cal.waitingServoToStop = true;
                     }
                     // Wait for the servo to fully stop before starting speed measuring
                     else if  (IsDelayElapsed_ms(pSS->cal.timestamp_ms, 200))
                     {
-                        pSS->cal.timestamp_ms = millis();
+                        pSS->cal.timestamp_ms = now;
                         pSS->cal.subState = SS_C_MAX;
                         pSS->cal.waitingServoToStop = false;
                         pSS->servoVal = pServoConf->max;
@@ -771,14 +776,14 @@ static void tailTuneModeServoSetup(struct servoSetup_t *pSS, servoParam_t *pServ
                 {
                     if (!pSS->cal.waitingServoToStop)
                     {
-                        pSS->cal.avg.sum += millis() - pSS->cal.timestamp_ms;
+                        pSS->cal.avg.sum += now - pSS->cal.timestamp_ms;
                         pSS->cal.avg.numOf++;
-                        pSS->cal.timestamp_ms = millis();
+                        pSS->cal.timestamp_ms = now;
                         pSS->cal.waitingServoToStop = true;
                     }
                     else if (IsDelayElapsed_ms(pSS->cal.timestamp_ms, 200))
                     {
-                        pSS->cal.timestamp_ms = millis();
+                        pSS->cal.timestamp_ms = now;
                         pSS->cal.subState = SS_C_MIN;
                         pSS->cal.waitingServoToStop = false;
                         pSS->servoVal = pServoConf->min;
@@ -843,6 +848,7 @@ static void checkMotorAcceleration(void)
     static float previousMotorSpeed = 1000.0f;
     static uint32_t decelerationStartedAt_ms = 0;
     static bool accelerating = false;
+    uint32_t now = millis();
 
     const float tailMotorSpeed = tailMotorVirtual;
     // Calculate how much the motor speed changed since last time
@@ -862,7 +868,7 @@ static void checkMotorAcceleration(void)
         if (accelerating)
         {
             // Take a timestamp when direction and deceleration starts
-            decelerationStartedAt_ms = millis();
+            decelerationStartedAt_ms = now;
             accelerating = false;
         }
     }

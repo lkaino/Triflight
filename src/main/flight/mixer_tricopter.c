@@ -560,7 +560,6 @@ STATIC_UNIT_TESTED void tailTuneModeThrustTorque(thrustTorque_t *pTT, const bool
 			// uncomment for debugging
 			currentProfile->servoConf[6].max = pTT->servoAvgAngle.sum / pTT->servoAvgAngle.numOf;
 			currentProfile->servoConf[6].min = pTT->tailTuneGyroLimit * 10.0f;
-			saveConfigAndNotify();
 			*/
             float averageServoAngle = pTT->servoAvgAngle.sum / 10.0f / pTT->servoAvgAngle.numOf;
             if (averageServoAngle > 90.5f && averageServoAngle < 120.f) {

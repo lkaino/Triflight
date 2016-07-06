@@ -171,8 +171,8 @@ void triInitMixer(servoParam_t *pTailServoConfig,
     const float tri_motor_acceleration_float = (float)gpTriMixerConfig->tri_motor_acceleration / 100;
     motorAcceleration = (float)throttleRange / tri_motor_acceleration_float;
 
-    // Reset the I term when motor deceleration has lasted 35% of the min to max time
-    resetITermDecelerationLasted_ms = (uint16_t)(tri_motor_acceleration_float * 1000.0f * 0.35f);
+    // Reset the I term when motor deceleration has lasted 65% of the min to max time
+    resetITermDecelerationLasted_ms = (uint16_t)(gpTriMixerConfig->tri_motor_acceleration * 1000.0f * 0.65f);
 
     initCurves();
     updateServoFeedbackADCChannel(gpTriMixerConfig->tri_servo_feedback);
@@ -562,7 +562,7 @@ STATIC_UNIT_TESTED void tailTuneModeThrustTorque(thrustTorque_t *pTT, const bool
             isRcAxisWithinDeadband(ROLL) &&
             isRcAxisWithinDeadband(PITCH) &&
             isRcAxisWithinDeadband(YAW) &&
-            (fabsf(gyro.gyroADCf[FD_YAW]) <= 3.5f)) // deg/s
+            (fabsf(gyro.gyroADCf[FD_YAW]) <= 5.0f)) // deg/s
         {
             if (IsDelayElapsed_ms(pTT->timestamp_ms, 250))
             {

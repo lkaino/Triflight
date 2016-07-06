@@ -56,7 +56,7 @@
 #include "flight/mixer.h"
 
 //! Integrator is disabled when rate error exceeds this limit
-#define LUXFLOAT_INTEGRATOR_DISABLE_LIMIT_DPS (50.0f)
+#define LUXFLOAT_INTEGRATOR_DISABLE_LIMIT_DPS (75.0f)
 
 extern uint8_t PIDweight[3], Iweigth[3];
 extern float lastITermf[3], ITermLimitf[3];

@@ -55,7 +55,7 @@
 #include "flight/gtune.h"
 #include "flight/mixer.h"
 
-#define REWRITE_INTEGRATOR_DISABLE_LIMIT_DPS (50 * 41 / 10)
+#define REWRITE_INTEGRATOR_DISABLE_LIMIT_DPS (75 * 41 / 10)
 extern uint8_t PIDweight[3], Iweigth[3];
 extern int32_t lastITerm[3], ITermLimit[3];
 

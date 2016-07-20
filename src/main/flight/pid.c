@@ -75,11 +75,6 @@ void pidSetItermAccelerator(float newItermAccelerator) {
     itermAccelerator = newItermAccelerator;
 }
 
-void pidResetErrorGyroAxis(flight_dynamics_index_t axis)
-{
-    axisPID_I[axis] = 0.0f;
-}
-
 void pidStabilisationState(pidStabilisationState_e pidControllerState)
 {
     pidStabilisationEnabled = (pidControllerState == PID_STABILISATION_ON) ? true : false;

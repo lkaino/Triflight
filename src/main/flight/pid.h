@@ -76,5 +76,4 @@ void pidFilterIsSetCheck(const pidProfile_t *pidProfile);
 void pidSetController(pidControllerType_e type);
 void pidResetITermAngle(void);
 void pidResetITerm(void);
-void pidResetErrorGyroAxis(flight_dynamics_index_t axis);
 void pidSetExpectedGyroError(flight_dynamics_index_t axis, int16_t error);

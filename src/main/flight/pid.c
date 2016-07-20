@@ -116,12 +116,6 @@ void pidResetITerm(void)
     }
 }
 
-void pidResetErrorGyroAxis(flight_dynamics_index_t axis)
-{
-    lastITerm[axis] = 0;
-    lastITermf[axis] = 0.0f;
-}
-
 biquad_t deltaFilterState[3];
 
 void pidFilterIsSetCheck(const pidProfile_t *pidProfile)

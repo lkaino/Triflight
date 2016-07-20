@@ -135,7 +135,6 @@ void pidInitConfig(const pidProfile_t *pidProfile);
 void pidInit(const pidProfile_t *pidProfile);
 void pidCopyProfile(uint8_t dstPidProfileIndex, uint8_t srcPidProfileIndex);
 bool crashRecoveryModeActive(void);
-void pidResetErrorGyroAxis(flight_dynamics_index_t axis);
 void pidSetExpectedGyroError(flight_dynamics_index_t axis, float error);
 float getdT();
 #endif

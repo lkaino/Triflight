@@ -539,7 +539,7 @@ STATIC_UNIT_TESTED void tailTuneModeThrustTorque(thrustTorque_t *pTT, const bool
             isRcAxisWithinDeadband(ROLL) &&
             isRcAxisWithinDeadband(PITCH) &&
             isRcAxisWithinDeadband(YAW) &&
-            (fabsf(gyroADC[FD_YAW] * gyro.scale) <= 5.0f)) // deg/s
+            (fabsf(gyroADC[FD_YAW] * gyro.scale) <= 6.0f)) // deg/s
         {
             if (IsDelayElapsed_ms(pTT->timestamp_ms, 250))
             {

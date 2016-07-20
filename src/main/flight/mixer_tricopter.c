@@ -94,8 +94,6 @@ static float tailMotorVirtual = 1000.0f;
 static int16_t throttleRange = 0;
 //! Motor acceleration in output units (us) / second
 static float motorAcceleration = 0;
-//! Reset the I term when tail motor deceleration has lasted (ms)
-static uint16_t resetITermDecelerationLasted_ms = 0;
 
 static servoParam_t * gpTailServoConf;
 static int16_t *gpTailServo;
@@ -143,9 +141,6 @@ void triInitMixer(servoParam_t *pTailServoConfig,
 
     throttleRange = motorConfig()->maxthrottle - motorConfig()->minthrottle;
     motorAcceleration = (float)throttleRange / gpMixerConfig->tri_motor_acceleration;
-
-    // Reset the I term when motor deceleration has lasted 35% of the min to max time
-    resetITermDecelerationLasted_ms = (uint16_t)(gpMixerConfig->tri_motor_acceleration * 1000.0f * 0.65f);
 
     initCurves();
     updateServoFeedbackADCChannel(gpMixerConfig->tri_servo_feedback);
@@ -851,7 +846,6 @@ static int16_t scaleAUXChannel(u8 channel, int16_t scale)
 static void checkMotorAcceleration(void)
 {
     static float previousMotorSpeed = 1000.0f;
-    static uint32_t decelerationStartedAt_ms = 0;
     static bool accelerating = false;
 
     const float tailMotorSpeed = tailMotorVirtual;
@@ -862,36 +856,18 @@ static void checkMotorAcceleration(void)
     // Check if acceleration has changed to deceleration and vice versa
     if (acceleration > 0.0f)
     {
-        if (!accelerating)
-        {
-            accelerating = true;
-        }
+        accelerating = true;
     }
     else
     {
-        if (accelerating)
-        {
-            // Take a timestamp when direction and deceleration starts
-            decelerationStartedAt_ms = millis();
-            accelerating = false;
-        }
+        accelerating = false;
     }
 
-    /* Reset the I term in a dynamic situation where the motor is causing yaw error for longer period of time.
-     * This helps especially when throttle is cut, the copter is quickly losing yaw authority and we can't
-     * have the slow integrator resisting the correction.
-     *
-     * Tests have shown that this is mostly needed when throttle is cut (motor decelerating), so only
-     * reset I term in that case.
+     /* Tests have shown that this is mostly needed when throttle is cut (motor decelerating), so only
+     * set the expected gyro error in that case.
      */
     if (!accelerating)
     {
-        if (IsDelayElapsed_ms(decelerationStartedAt_ms, resetITermDecelerationLasted_ms))
-        {
-            pidResetErrorGyroAxis(FD_YAW);
-
-        }
-
         // Set the expected axis error based on tail motor acceleration and configured gain
         pidSetExpectedGyroError(FD_YAW, acceleration * gpMixerConfig->tri_motor_acc_yaw_correction / 10);
     }

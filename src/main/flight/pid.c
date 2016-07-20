@@ -142,12 +142,6 @@ float getdT(void)
     return dT;
 }
 
-void pidResetErrorGyroAxis(flight_dynamics_index_t axis)
-{
-    lastITerm[axis] = 0;
-    lastITermf[axis] = 0.0f;
-}
-
 void pidSetTargetLooptime(uint32_t pidLooptime)
 {
     targetPidLooptime = pidLooptime;

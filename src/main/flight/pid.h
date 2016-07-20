@@ -108,6 +108,5 @@ void pidSetItermAccelerator(float newItermAccelerator);
 void pidInitFilters(const pidProfile_t *pidProfile);
 void pidInitConfig(const pidProfile_t *pidProfile);
 
-void pidResetErrorGyroAxis(flight_dynamics_index_t axis);
 void pidSetExpectedGyroError(flight_dynamics_index_t axis, float error);
 float getdT();

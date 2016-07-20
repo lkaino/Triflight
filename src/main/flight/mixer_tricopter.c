@@ -930,7 +930,7 @@ static void tailMotorStep(int16_t setpoint, float dT)
      * 10 Hz -> 9  ms
      */
     static pt1Filter_t motorFilter;
-    tailMotorVirtual = pt1FilterApply4(&motorFilter, current, 20, dT);
+    tailMotorVirtual = pt1FilterApply4(&motorFilter, current, 5, dT);
 }
 
 static int8_t triServoDirection(void)

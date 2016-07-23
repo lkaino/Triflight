@@ -264,7 +264,7 @@ int16_t triGetMotorCorrection(uint8_t motorIndex)
          * TODO: this is not the best way to achieve this, but how could the min_throttle
          * pitch correction be calculated, as the thrust is zero?
          */
-        throttleMotorOutput = constrain(throttleMotorOutput, throttleRange / 2, 1000);
+        throttleMotorOutput = constrain(throttleMotorOutput, throttleRange * 2 / 3, 1000);
         correction = (throttleMotorOutput * getPitchCorrectionAtTailAngle(DEGREES_TO_RADIANS(futureServoAngle / 10.0f), tailServoThrustFactor)) - throttleMotorOutput;
     }
 

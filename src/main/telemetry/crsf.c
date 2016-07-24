@@ -28,8 +28,8 @@
 
 #if (FC_VERSION_MAJOR == 3) // not a very good way of finding out if this is betaflight or Cleanflight
 #define BETAFLIGHT
-#else
-#define CLEANFLIGHT
+#elif (FC_VERSION_MAJOR == 0)
+#define BETAFLIGHT // Triflight
 #endif
 
 #ifdef CLEANFLIGHT

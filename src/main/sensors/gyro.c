@@ -84,7 +84,7 @@ PG_RESET_TEMPLATE(gyroConfig_t, gyroConfig,
 
     .gyro_soft_type = FILTER_PT1,
 
-    .gyro_soft_lpf_hz = 90,    // software based lpf filter for gyro
+    .gyro_soft_lpf_hz = 95,    // software based lpf filter for gyro
     .gyro_soft_notch_hz = 0,
     .gyro_soft_notch_cutoff_hz = 130,
 

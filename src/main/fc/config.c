@@ -264,7 +264,7 @@ void resetServoConfig(servoConfig_t *servoConfig)
 
 void resetTriMixerConfig(triMixerConfig_t *triMixerConfig)
 {
-    triMixerConfig->tri_motor_acc_yaw_correction = 1500;
+    triMixerConfig->tri_motor_acc_yaw_correction = 27;
     triMixerConfig->tri_motor_acceleration = 0.18f;
     triMixerConfig->tri_servo_feedback = DEFAULT_SERVO_FEEDBACK_SOURCE;
     triMixerConfig->tri_servo_max_adc = 0;
@@ -272,8 +272,8 @@ void resetTriMixerConfig(triMixerConfig_t *triMixerConfig)
     triMixerConfig->tri_servo_min_adc = 0;
     triMixerConfig->tri_tail_motor_thrustfactor = 138;
     triMixerConfig->tri_tail_servo_speed = 300; // Default for BMS-210DMH at 5V
-    triMixerConfig->tri_dynamic_yaw_minthrottle = 500;
-    triMixerConfig->tri_dynamic_yaw_maxthrottle = 12;
+    triMixerConfig->tri_dynamic_yaw_minthrottle = 235;
+    triMixerConfig->tri_dynamic_yaw_maxthrottle = 50;
 }
 #endif
 

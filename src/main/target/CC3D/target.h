@@ -71,7 +71,7 @@
 
 #define INVERTER
 #define BEEPER
-#define DISPLAY
+//#define DISPLAY // Disabled on Triflight
 
 #define USB_IO
 

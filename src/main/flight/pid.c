@@ -75,15 +75,15 @@ PG_REGISTER_PROFILE_WITH_RESET_TEMPLATE(pidProfile_t, pidProfile, PG_PID_PROFILE
 
 PG_RESET_TEMPLATE(pidProfile_t, pidProfile,
     .pidController = PID_CONTROLLER_MWREWRITE,
-    .P8[PIDROLL] = 40,
+    .P8[PIDROLL] = 41,
     .I8[PIDROLL] = 24,
-    .D8[PIDROLL] = 30,
-    .P8[PIDPITCH] = 38,
+    .D8[PIDROLL] = 38,
+    .P8[PIDPITCH] = 35,
     .I8[PIDPITCH] = 23,
-    .D8[PIDPITCH] = 20,
-    .P8[PIDYAW] = 70,
-    .I8[PIDYAW] = 10,
-    .D8[PIDYAW] = 35,
+    .D8[PIDPITCH] = 27,
+    .P8[PIDYAW] = 144,
+    .I8[PIDYAW] = 30,
+    .D8[PIDYAW] = 80,
     .P8[PIDALT] = 50,
     .I8[PIDALT] = 0,
     .D8[PIDALT] = 0,
@@ -105,7 +105,7 @@ PG_RESET_TEMPLATE(pidProfile_t, pidProfile,
     .D8[PIDVEL] = 1,
 
     .yaw_p_limit = YAW_P_LIMIT_MAX,
-    .dterm_cut_hz = 40,
+    .dterm_cut_hz = 95,
 );
 
 void pidResetITerm(void)

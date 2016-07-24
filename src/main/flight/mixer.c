@@ -105,7 +105,7 @@ PG_RESET_TEMPLATE(mixerConfig_t, mixerConfig,
     .tri_servo_mid_adc = 0,
     .tri_servo_max_adc = 0,
     .tri_servo_feedback = DEFAULT_SERVO_FEEDBACK_SOURCE,
-    .tri_motor_acc_yaw_correction = 10,
+    .tri_motor_acc_yaw_correction = 27,
     .tri_motor_acceleration = 0.18f,
 );
 #else

@@ -2705,7 +2705,7 @@ static void cliVersion(char *cmdline)
 {
     UNUSED(cmdline);
 
-    cliPrintf("# TriFlight 0.5/%s %s %s / %s (%s)",
+    cliPrintf("# TriFlight 0.6/%s %s %s / %s (%s)",
         targetName,
         FC_VERSION_STRING,
         buildDate,

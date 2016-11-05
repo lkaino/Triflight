@@ -42,7 +42,7 @@ void pgResetFn_amperageMeterConfig(amperageMeterConfig_t *instance)
     for (int i = 0; i < MAX_AMPERAGE_METERS; i++) {
         if (i == AMPERAGE_METER_ADC) {
             RESET_CONFIG(amperageMeterConfig_t, &instance[i],
-                .scale = 400, // for Allegro ACS758LCB-100U (40mV/A)
+                .scale = AMPERAGE_SCALE_DEFAULT,
             );
         }
     }

@@ -22,7 +22,7 @@
 #endif
 
 #ifndef AMPERAGE_SCALE_DEFAULT
-#define AMPERAGE_SCALE_DEFAULT  400
+#define AMPERAGE_SCALE_DEFAULT  400 // for Allegro ACS758LCB-100U (40mV/A)
 #endif
 
 typedef struct amperageMeterConfig_s {

@@ -53,8 +53,8 @@ void pgResetFn_controlRateProfiles(controlRateConfig_t *instance)
             .rates[FD_PITCH] = 38,
             .rates[FD_ROLL] = 38,
             .rates[FD_YAW] = 50,
-            .tri_dynamic_yaw_minthrottle = 235,
-            .tri_dynamic_yaw_maxthrottle = 50,
+            .tri_dynamic_yaw_minthrottle = 250,
+            .tri_dynamic_yaw_maxthrottle = 25,
         );
     }
 }

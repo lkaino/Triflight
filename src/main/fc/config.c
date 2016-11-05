@@ -272,8 +272,8 @@ void resetTriMixerConfig(triMixerConfig_t *triMixerConfig)
     triMixerConfig->tri_servo_min_adc = 0;
     triMixerConfig->tri_tail_motor_thrustfactor = 138;
     triMixerConfig->tri_tail_servo_speed = 300; // Default for BMS-210DMH at 5V
-    triMixerConfig->tri_dynamic_yaw_minthrottle = 235;
-    triMixerConfig->tri_dynamic_yaw_maxthrottle = 50;
+    triMixerConfig->tri_dynamic_yaw_minthrottle = 250;
+    triMixerConfig->tri_dynamic_yaw_maxthrottle = 25;
 }
 #endif
 

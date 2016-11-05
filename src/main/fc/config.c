@@ -57,6 +57,7 @@
 #include "sensors/compass.h"
 #include "sensors/acceleration.h"
 #include "sensors/gyro.h"
+#include "sensors/amperage.h"
 
 #include "telemetry/telemetry.h"
 

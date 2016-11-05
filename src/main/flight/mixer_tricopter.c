@@ -816,19 +816,23 @@ static void updateServoFeedbackADCChannel(uint8_t tri_servo_feedback)
 {
     switch (tri_servo_feedback)
     {
+#ifdef ADC_RSSI
     case TRI_SERVO_FB_RSSI:
         tailServoADCChannel = ADC_RSSI;
         break;
+#endif
+#ifdef ADC_AMPERAGE
     case TRI_SERVO_FB_CURRENT:
         tailServoADCChannel = ADC_AMPERAGE;
         break;
+#endif
 #ifdef ADC_EXTERNAL
     case TRI_SERVO_FB_EXT1:
         tailServoADCChannel = ADC_EXTERNAL;
         break;
 #endif
     default:
-        tailServoADCChannel = ADC_RSSI;
+        tailServoADCChannel = ADC_CHANNEL0;
         break;
     }
 }

@@ -537,8 +537,12 @@ void init(void)
     {
         switch (mixerConfig()->tri_servo_feedback)
         {
+#ifdef ADC_RSSI
         case TRI_SERVO_FB_RSSI:     adc_params.channelMask |= ADC_CHANNEL_MASK(ADC_RSSI);     break;
+#endif
+#ifdef ADC_AMPERAGE
         case TRI_SERVO_FB_CURRENT:  adc_params.channelMask |= ADC_CHANNEL_MASK(ADC_AMPERAGE); break;
+#endif
 #ifdef ADC_EXTERNAL
         case TRI_SERVO_FB_EXT1:     adc_params.channelMask |= ADC_CHANNEL_MASK(ADC_EXTERNAL); break;
 #endif

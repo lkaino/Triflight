@@ -69,7 +69,7 @@
 #define MPU6500_SPI_INSTANCE             NAZE_SPI_INSTANCE
 
 
-#define USE_FLASHFS
+//#define USE_FLASHFS // Disabled in Triflight
 
 #define USE_FLASH_M25P16
 
@@ -206,10 +206,10 @@
 #define WS2811_DMA_HANDLER_IDENTIFER DMA1Channel6Descriptor
 
 #define GPS
-#define GTUNE
+//#define GTUNE
 #define BLACKBOX
 #define TELEMETRY
-#define TELEMETRY_IBUS
+//#define TELEMETRY_IBUS
 #define SERIAL_RX
 #define USE_SERVOS
 #define USE_CLI

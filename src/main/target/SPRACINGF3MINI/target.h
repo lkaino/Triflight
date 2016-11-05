@@ -20,7 +20,7 @@
 #define TARGET_BOARD_IDENTIFIER "SRFM"
 
 #define DEFAULT_PID_PROCESS_DENOM 1
-#define DEFAULT_GYRO_SAMPLE_HZ 2000
+#define DEFAULT_GYRO_SAMPLE_HZ 1600
 
 // early prototype had slightly different pin mappings.
 //#define SPRACINGF3MINI_MKII_REVA

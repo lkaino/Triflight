@@ -17,7 +17,10 @@
 
 #pragma once
 
-#define TARGET_BOARD_IDENTIFIER "REF3" // Rc Explorer F3
+#define TARGET_BOARD_IDENTIFIER "REF3" // RCExplorer F3
+
+#define DEFAULT_PID_PROCESS_DENOM 1
+#define DEFAULT_GYRO_SAMPLE_HZ 1600
 
 #define LED0_GPIO   GPIOB
 #define LED0_PIN    Pin_4  // Blue  - PB4
@@ -157,6 +160,7 @@
 #define ADC_AMPERAGE                ADC_CHANNEL1
 #define ADC_RSSI                    ADC_CHANNEL2
 
+#define BOARD_HAS_AMPERAGE_METER
 #define AMPERAGE_SCALE_DEFAULT      360
 
 #define LED_STRIP // LED strip configuration using PWM motor output pin 5.

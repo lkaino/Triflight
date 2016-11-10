@@ -85,7 +85,6 @@ uint8_t getCurrentControlRateProfile(void);
 void changeControlRateProfile(uint8_t profileIndex);
 bool canSoftwareSerialBeUsed(void);
 
-uint16_t getCurrentMinthrottle(void);
 struct master_s;
 
 void targetConfiguration(struct master_s *config);

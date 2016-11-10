@@ -122,8 +122,10 @@ typedef struct thrustTorque_s {
     tailTuneState_e state;
     uint32_t startBeepDelay_ms;
     uint32_t timestamp_ms;
+    uint32_t timestamp2_ms;
     uint32_t lastAdjTime_ms;
     servoAvgAngle_t servoAvgAngle;
+    float tailTuneGyroLimit;
 } thrustTorque_t;
 
 typedef struct tailTune_s {

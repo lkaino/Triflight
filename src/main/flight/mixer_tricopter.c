@@ -66,7 +66,6 @@
 
 #define TRI_YAW_FORCE_PRECISION     (1000)
 
-#define IsDelayElapsed_us(timestamp_us, delay_us) ((uint32_t)(micros() - timestamp_us) >= delay_us)
 #define IsDelayElapsed_ms(timestamp_ms, delay_ms) ((uint32_t)(millis() - timestamp_ms) >= delay_ms)
 
 #endif

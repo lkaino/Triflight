@@ -58,5 +58,3 @@ void changeProfile(uint8_t profileIndex);
 
 uint8_t getCurrentControlRateProfile(void);
 void changeControlRateProfile(uint8_t profileIndex);
-uint16_t getCurrentMinthrottle(void);
-uint16_t getCurrentMaxthrottle(void);

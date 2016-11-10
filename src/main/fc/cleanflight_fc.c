@@ -1072,20 +1072,14 @@ bool isRcAxisWithinDeadband(int32_t axis)
 {
     int32_t tmp = MIN(ABS(rcData[axis] - rxConfig()->midrc), 500);
     bool ret = false;
-    if (axis == ROLL || axis == PITCH)
-    {
-        if (tmp <= rcControlsConfig()->deadband)
-        {
+    if (axis == YAW) {
+        if (tmp <= rcControlsConfig()->yaw_deadband) {
+            ret = true;
+        }
+    } else {
+        if (tmp <= rcControlsConfig()->deadband) {
             ret = true;
         }
     }
-    else
-    {
-        if (tmp <= rcControlsConfig()->deadband)
-        {
-            ret = true;
-        }
-    }
-
     return ret;
 }

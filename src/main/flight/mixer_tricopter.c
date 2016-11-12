@@ -73,7 +73,7 @@
 // Use the first once at the top of every function that will use one of the other
 #define InitDelayMeasurement_ms() const uint32_t now_ms = millis()
 #define IsDelayElapsed_ms(timestamp_ms, delay_ms) ((uint32_t) (now_ms - timestamp_ms) >= delay_ms)
-#define GetCurrentDelay_ms() (now_ms - pSS->cal.timestamp_ms)
+#define GetCurrentDelay_ms(timestamp_ms) (now_ms - timestamp_ms)
 #define GetCurrentTime_ms() (now_ms)
 
 #endif
@@ -566,7 +566,7 @@ STATIC_UNIT_TESTED void tailTuneModeThrustTorque(thrustTorque_t *pTT, const bool
         {
             pTT->timestamp_ms = GetCurrentTime_ms(); // sticks are NOT good
         }
-        if (fabsf(gyroADC[FD_YAW] * gyro.scale) > pTT->tailTuneGyroLimit)
+        if (fabsf(gyro.gyroADCf[FD_YAW]) > pTT->tailTuneGyroLimit)
         {
             pTT->timestamp2_ms = GetCurrentTime_ms(); // gyro is NOT stable
         }
@@ -790,7 +790,7 @@ static void tailTuneModeServoSetup(struct servoSetup_t *pSS, servoParam_t *pServ
                 {
                     if (!pSS->cal.waitingServoToStop)
                     {
-                        pSS->cal.avg.sum += GetCurrentDelay_ms();
+                        pSS->cal.avg.sum += GetCurrentDelay_ms(pSS->cal.timestamp_ms);
                         pSS->cal.avg.numOf++;
 
                         if (pSS->cal.avg.numOf > 5)
@@ -822,7 +822,7 @@ static void tailTuneModeServoSetup(struct servoSetup_t *pSS, servoParam_t *pServ
                 {
                     if (!pSS->cal.waitingServoToStop)
                     {
-                        pSS->cal.avg.sum += GetCurrentDelay_ms();
+                        pSS->cal.avg.sum += GetCurrentDelay_ms(pSS->cal.timestamp_ms);
                         pSS->cal.avg.numOf++;
                         pSS->cal.timestamp_ms = GetCurrentTime_ms();
                         pSS->cal.waitingServoToStop = true;

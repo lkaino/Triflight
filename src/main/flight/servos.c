@@ -283,7 +283,7 @@ void writeServos(void)
 
     case MIXER_TRI:
     case MIXER_CUSTOM_TRI:
-            if (triEnableServoUnarmed()) {
+        if (triIsEnabledServoUnarmed()) {
             // if unarmed flag set, we always move servo
             pwmWriteServo(servoIndex++, servo[SERVO_RUDDER]);
         } else {
@@ -339,9 +339,7 @@ STATIC_UNIT_TESTED void servoMixer(void)
 {
     if (triMixerInUse()) {
         triServoMixer((uint16_t)axisPIDf[YAW]);
-    }
-    else
-    {
+    } else {
         int16_t input[INPUT_SOURCE_COUNT]; // Range [-500:+500]
         static int16_t currentOutput[MAX_SERVO_RULES];
         uint8_t i;

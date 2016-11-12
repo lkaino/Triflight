@@ -66,7 +66,11 @@
 
 #define TRI_YAW_FORCE_PRECISION     (1000)
 
-#define IsDelayElapsed_ms(timestamp_ms, delay_ms) ((uint32_t)(now - timestamp_ms) >= delay_ms) /* set now to millis() at start of each function */
+// Use the first once at the top of every function that will use one of the other
+#define InitDelayMeasurement_ms() const uint32_t now_ms = millis()
+#define IsDelayElapsed_ms(timestamp_ms, delay_ms) ((uint32_t) (now_ms - timestamp_ms) >= delay_ms)
+#define GetCurrentDelay_ms() (now_ms - pSS->cal.timestamp_ms)
+#define GetCurrentTime_ms() (now_ms)
 
 #endif
 
@@ -481,7 +485,7 @@ static void triTailTuneStep(servoParam_t *pServoConf, int16_t *pServoVal)
 
 STATIC_UNIT_TESTED void tailTuneModeThrustTorque(thrustTorque_t *pTT, const bool isThrottleHigh)
 {
-    uint32_t now = millis();
+    InitDelayMeasurement_ms();
     switch(pTT->state)
     {
     case TT_IDLE:
@@ -490,9 +494,9 @@ STATIC_UNIT_TESTED void tailTuneModeThrustTorque(thrustTorque_t *pTT, const bool
         {
             beeper(BEEPER_BAT_LOW);
             pTT->startBeepDelay_ms = 1000;
-            pTT->timestamp_ms = now;
-            pTT->timestamp2_ms = now;
-            pTT->lastAdjTime_ms = now;
+            pTT->timestamp_ms = GetCurrentTime_ms();
+            pTT->timestamp2_ms = GetCurrentTime_ms();
+            pTT->lastAdjTime_ms = GetCurrentTime_ms();
             pTT->state = TT_WAIT;
             pTT->servoAvgAngle.sum = 0;
             pTT->servoAvgAngle.numOf = 0;
@@ -509,7 +513,7 @@ STATIC_UNIT_TESTED void tailTuneModeThrustTorque(thrustTorque_t *pTT, const bool
                 // Longer beep when starting
                 beeper(BEEPER_BAT_CRIT_LOW);
                 pTT->state = TT_ACTIVE;
-                pTT->timestamp_ms = now;
+                pTT->timestamp_ms = GetCurrentTime_ms();
             }
             else if (IsDelayElapsed_ms(pTT->timestamp_ms, pTT->startBeepDelay_ms))
             {
@@ -529,11 +533,11 @@ STATIC_UNIT_TESTED void tailTuneModeThrustTorque(thrustTorque_t *pTT, const bool
             isRcAxisWithinDeadband(PITCH) &&
             isRcAxisWithinDeadband(YAW)))
         {
-            pTT->timestamp_ms = now; // sticks are good
+            pTT->timestamp_ms = GetCurrentTime_ms(); // sticks are good
         }
         if (fabsf(gyroADC[FD_YAW] * gyro.scale) > pTT->tailTuneGyroLimit)
         {
-            pTT->timestamp2_ms = now; // gyro is stable
+            pTT->timestamp2_ms = GetCurrentTime_ms(); // gyro is stable
         }
         if (IsDelayElapsed_ms(pTT->timestamp_ms, 250))
         {
@@ -542,7 +546,7 @@ STATIC_UNIT_TESTED void tailTuneModeThrustTorque(thrustTorque_t *pTT, const bool
             {
                 // Gyro has also been stable for 250 ms
                 if (IsDelayElapsed_ms(pTT->lastAdjTime_ms, 20)) {
-                    pTT->lastAdjTime_ms = now;
+                    pTT->lastAdjTime_ms = GetCurrentTime_ms();
                     pTT->servoAvgAngle.sum += triGetCurrentServoAngle();
                     pTT->servoAvgAngle.numOf++;
                     if ((pTT->servoAvgAngle.numOf & 0x1f) == 0x00) // once every 32 times
@@ -553,7 +557,7 @@ STATIC_UNIT_TESTED void tailTuneModeThrustTorque(thrustTorque_t *pTT, const bool
                     {
                         beeper(BEEPER_READY_BEEP);
                         pTT->state = TT_WAIT_FOR_DISARM;
-                        pTT->timestamp_ms = now;
+                        pTT->timestamp_ms = GetCurrentTime_ms();
                     }
                 }
             }
@@ -561,7 +565,7 @@ STATIC_UNIT_TESTED void tailTuneModeThrustTorque(thrustTorque_t *pTT, const bool
             {
                 // Sticks are OK but there has not been any valid samples in 1 s, try to loosen the gyro criteria a little
                 pTT->tailTuneGyroLimit += 0.1f;
-                pTT->lastAdjTime_ms = now;
+                pTT->lastAdjTime_ms = GetCurrentTime_ms();
                 if (pTT->tailTuneGyroLimit > 8.0f)
                 {
                     // If there are not enough samples by now it is a fail.
@@ -591,14 +595,14 @@ STATIC_UNIT_TESTED void tailTuneModeThrustTorque(thrustTorque_t *pTT, const bool
             {
                 pTT->state = TT_FAIL;
             }
-            pTT->timestamp_ms = now;
+            pTT->timestamp_ms = GetCurrentTime_ms();
         }
         else
         {
             if (IsDelayElapsed_ms(pTT->timestamp_ms, 2000))
             {
                 beeper(BEEPER_READY_BEEP);
-                pTT->timestamp_ms = now;
+                pTT->timestamp_ms = GetCurrentTime_ms();
             }
         }
         break;
@@ -606,14 +610,14 @@ STATIC_UNIT_TESTED void tailTuneModeThrustTorque(thrustTorque_t *pTT, const bool
         if (IsDelayElapsed_ms(pTT->timestamp_ms, 2000))
         {
             beeper(BEEPER_READY_BEEP);
-            pTT->timestamp_ms = now;
+            pTT->timestamp_ms = GetCurrentTime_ms();
         }
         break;
     case TT_FAIL:
         if (IsDelayElapsed_ms(pTT->timestamp_ms, 2000))
         {
             beeper(BEEPER_ACC_CALIBRATION_FAIL);
-            pTT->timestamp_ms = now;
+            pTT->timestamp_ms = GetCurrentTime_ms();
         }
         break;
     }
@@ -621,7 +625,7 @@ STATIC_UNIT_TESTED void tailTuneModeThrustTorque(thrustTorque_t *pTT, const bool
 
 static void tailTuneModeServoSetup(struct servoSetup_t *pSS, servoParam_t *pServoConf, int16_t *pServoVal)
 {
-    uint32_t now = millis();
+    InitDelayMeasurement_ms();
     // Check mode select
     if (isRcAxisWithinDeadband(PITCH) && (rcCommand[ROLL] < -100))
     {
@@ -725,7 +729,7 @@ static void tailTuneModeServoSetup(struct servoSetup_t *pSS, servoParam_t *pServ
                 }
             }
 
-            pSS->cal.timestamp_ms = now;
+            pSS->cal.timestamp_ms = GetCurrentTime_ms();
             pSS->cal.avg.sum = 0;
             pSS->cal.avg.numOf = 0;
             pSS->cal.done = false;
@@ -759,7 +763,7 @@ static void tailTuneModeServoSetup(struct servoSetup_t *pSS, servoParam_t *pServ
                 {
                     if (!pSS->cal.waitingServoToStop)
                     {
-                        pSS->cal.avg.sum += now - pSS->cal.timestamp_ms;
+                        pSS->cal.avg.sum += GetCurrentDelay_ms();
                         pSS->cal.avg.numOf++;
 
                         if (pSS->cal.avg.numOf > 5)
@@ -772,13 +776,13 @@ static void tailTuneModeServoSetup(struct servoSetup_t *pSS, servoParam_t *pServ
                             pSS->servoVal = pServoConf->middle;
                         }
 
-                        pSS->cal.timestamp_ms = now;
+                        pSS->cal.timestamp_ms = GetCurrentTime_ms();
                         pSS->cal.waitingServoToStop = true;
                     }
                     // Wait for the servo to fully stop before starting speed measuring
                     else if  (IsDelayElapsed_ms(pSS->cal.timestamp_ms, 200))
                     {
-                        pSS->cal.timestamp_ms = now;
+                        pSS->cal.timestamp_ms = GetCurrentTime_ms();
                         pSS->cal.subState = SS_C_MAX;
                         pSS->cal.waitingServoToStop = false;
                         pSS->servoVal = pServoConf->max;
@@ -791,14 +795,14 @@ static void tailTuneModeServoSetup(struct servoSetup_t *pSS, servoParam_t *pServ
                 {
                     if (!pSS->cal.waitingServoToStop)
                     {
-                        pSS->cal.avg.sum += now - pSS->cal.timestamp_ms;
+                        pSS->cal.avg.sum += GetCurrentDelay_ms();
                         pSS->cal.avg.numOf++;
-                        pSS->cal.timestamp_ms = now;
+                        pSS->cal.timestamp_ms = GetCurrentTime_ms();
                         pSS->cal.waitingServoToStop = true;
                     }
                     else if (IsDelayElapsed_ms(pSS->cal.timestamp_ms, 200))
                     {
-                        pSS->cal.timestamp_ms = now;
+                        pSS->cal.timestamp_ms = GetCurrentTime_ms();
                         pSS->cal.subState = SS_C_MIN;
                         pSS->cal.waitingServoToStop = false;
                         pSS->servoVal = pServoConf->min;

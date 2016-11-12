@@ -533,20 +533,24 @@ void init(void)
 #endif
 
 #ifdef USE_SERVOS
-    if ((mixerConfig()->mixerMode == MIXER_TRI) || (mixerConfig()->mixerMode == MIXER_CUSTOM_TRI))
-    {
-        switch (mixerConfig()->tri_servo_feedback)
-        {
+    if ((mixerConfig()->mixerMode == MIXER_TRI) || (mixerConfig()->mixerMode == MIXER_CUSTOM_TRI)) {
+        switch (mixerConfig()->tri_servo_feedback) {
 #ifdef ADC_RSSI
-        case TRI_SERVO_FB_RSSI:     adc_params.channelMask |= ADC_CHANNEL_MASK(ADC_RSSI);     break;
+        case TRI_SERVO_FB_RSSI:
+            adc_params.channelMask |= ADC_CHANNEL_MASK(ADC_RSSI);
+            break;
 #endif
 #ifdef ADC_AMPERAGE
-        case TRI_SERVO_FB_CURRENT:  adc_params.channelMask |= ADC_CHANNEL_MASK(ADC_AMPERAGE); break;
+        case TRI_SERVO_FB_CURRENT:
+            adc_params.channelMask |= ADC_CHANNEL_MASK(ADC_AMPERAGE);
+            break;
 #endif
 #ifdef ADC_EXTERNAL
-        case TRI_SERVO_FB_EXT1:     adc_params.channelMask |= ADC_CHANNEL_MASK(ADC_EXTERNAL); break;
+            case TRI_SERVO_FB_EXT1: adc_params.channelMask |= ADC_CHANNEL_MASK(ADC_EXTERNAL);
+            break;
 #endif
-        default: break;
+        default:
+            break;
         }
     }
 #endif

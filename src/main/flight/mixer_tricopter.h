@@ -15,25 +15,24 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef SRC_MAIN_FLIGHT_MIXER_TRICOPTER_H_
-#define SRC_MAIN_FLIGHT_MIXER_TRICOPTER_H_
+#pragma once
 
 #include "servos.h"
 
 #define TAIL_THRUST_FACTOR_MIN  (10)
 #define TAIL_THRUST_FACTOR_MAX  (400)
 
-#define TAIL_THRUST_FACTOR_MIN_FLOAT  (TAIL_THRUST_FACTOR_MIN / 10.0f)
-#define TAIL_THRUST_FACTOR_MAX_FLOAT  (TAIL_THRUST_FACTOR_MAX / 10.0f)
+#define TAIL_THRUST_FACTOR_MIN_FLOAT (TAIL_THRUST_FACTOR_MIN / 10.0f)
+#define TAIL_THRUST_FACTOR_MAX_FLOAT (TAIL_THRUST_FACTOR_MAX / 10.0f)
 
 #define TRI_MOTOR_ACC_CORRECTION_MAX  (200)
 
 /** @brief Servo feedback sources. */
 typedef enum {
-    TRI_SERVO_FB_VIRTUAL = 0,  ///< Virtual servo, no physical feedback signal from servo
-    TRI_SERVO_FB_RSSI,         ///< Feedback signal from RSSI ADC
-    TRI_SERVO_FB_CURRENT,      ///< Feedback signal from CURRENT ADC
-    TRI_SERVO_FB_EXT1,         ///< Feedback signal from EXT1 ADC
+    TRI_SERVO_FB_VIRTUAL = 0,  // Virtual servo, no physical feedback signal from servo
+    TRI_SERVO_FB_RSSI,         // Feedback signal from RSSI ADC
+    TRI_SERVO_FB_CURRENT,      // Feedback signal from CURRENT ADC
+    TRI_SERVO_FB_EXT1,         // Feedback signal from EXT1 ADC
 } triServoFeedbackSource_e;
 
 /** @brief Initialize tricopter specific mixer functionality.
@@ -43,14 +42,13 @@ typedef enum {
  *  @param pTailServo Pointer to tail servo output value.
  *  @return Void.
  */
-void triInitMixer(servoParam_t *pTailServoConfig,
-        int16_t *pTailServo);
+void triInitMixer(servoParam_t *pTailServoConfig, int16_t *pTailServo);
 
 /** @brief Get current tail servo angle.
  *
  *  @return Servo angle in decidegrees.
  */
-uint16_t triGetCurrentServoAngle();
+uint16_t triGetCurrentServoAngle(void);
 
 /** @brief Perform tricopter mixer actions.
  *
@@ -74,10 +72,8 @@ int16_t triGetMotorCorrection(uint8_t motorIndex);
  *
  *  @return true is should, otherwise false.
  */
-_Bool triEnableServoUnarmed(void);
+_Bool triIsEnabledServoUnarmed(void);
 
-#ifdef USE_SERVOS
-//TODO: Do we need the line above? Are there any tricopters without servos?
 #ifdef MIXER_TRICOPTER_INTERNALS
 
 typedef enum {
@@ -128,6 +124,25 @@ typedef struct thrustTorque_s {
     float tailTuneGyroLimit;
 } thrustTorque_t;
 
+typedef struct tailServo_s {
+    int32_t maxYawForce;
+    float thrustFactor;
+    int16_t maxAngle;
+    int16_t speed;
+    uint16_t angle;
+    uint16_t ADC;
+} tailServo_t;
+
+typedef struct tailMotor_s {
+    int16_t pitchZeroAngle;
+    int16_t accelerationDelay_ms;
+    int16_t decelerationDelay_ms;
+    int16_t accelerationDelay_angle;
+    int16_t decelerationDelay_angle;
+    float virtualFeedBack;
+
+} tailMotor_t;
+
 typedef struct tailTune_s {
     tailtuneMode_e mode;
     thrustTorque_t tt;
@@ -151,6 +166,3 @@ typedef struct tailTune_s {
 } tailTune_t;
 
 #endif /* MIXER_TRICOPTER_INTERNALS */
-#endif /* USE_SERVOS */
-
-#endif /* SRC_MAIN_FLIGHT_MIXER_TRICOPTER_H_ */

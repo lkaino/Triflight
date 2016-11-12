@@ -93,6 +93,7 @@ STATIC_UNIT_TESTED int16_t pidLuxFloatCore(int axis, const pidProfile_t *pidProf
     float PTerm = luxPTermScale * rateError * pidProfile->P8[axis] * PIDweight[axis] / 100;
     // Constrain YAW by yaw_p_limit value if not servo driven, in that case servolimits apply
     const float dT = getdT();
+
     if (axis == YAW) {
         if (pidProfile->yaw_lpf_hz) {
             PTerm = pt1FilterApply4(&yawFilter, PTerm, pidProfile->yaw_lpf_hz, dT);
@@ -107,15 +108,11 @@ STATIC_UNIT_TESTED int16_t pidLuxFloatCore(int axis, const pidProfile_t *pidProf
     // limit maximum integrator value to prevent WindUp - accumulating extreme values when system is saturated.
     // I coefficient (I8) moved before integration to make limiting independent from PID settings
     ITerm = constrainf(ITerm, -PID_MAX_I, PID_MAX_I);
-    if (fabsf(gyroRate) < LUXFLOAT_INTEGRATOR_DISABLE_LIMIT_DPS)
-    {
+    if (fabsf(gyroRate) < LUXFLOAT_INTEGRATOR_DISABLE_LIMIT_DPS) {
         lastITermf[axis] = ITerm;
-    }
-    else
-    {
+    } else {
         // Shrink only
-        if (fabsf(ITerm) < fabsf(lastITermf[axis]))
-        {
+        if (fabsf(ITerm) < fabsf(lastITermf[axis])) {
             lastITermf[axis] = ITerm;
         }
     }

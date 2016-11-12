@@ -505,7 +505,7 @@ int16_t triGetMotorCorrection(uint8_t motorIndex) {
     return 0;
 }
 
-_Bool triEnableServoUnarmed(void) {
+_Bool triIsEnabledServoUnarmed(void) {
     return true;
 }
 

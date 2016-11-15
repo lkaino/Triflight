@@ -227,8 +227,7 @@ void mixerInitServos(servoMixer_t *initialCustomServoMixers)
         servo[i] = DEFAULT_SERVO_MIDDLE;
     }
 
-    if ((mixerConfig()->mixerMode == MIXER_TRI) || (mixerConfig()->mixerMode == MIXER_CUSTOM_TRI))
-    {
+    if ((mixerConfig()->mixerMode == MIXER_TRI) || (mixerConfig()->mixerMode == MIXER_CUSTOM_TRI)) {
         triInitMixer(&servoConf[SERVO_RUDDER], &servo[SERVO_RUDDER]);
     }
 }
@@ -360,7 +359,7 @@ void writeServos(void)
 
         case MIXER_TRI:
         case MIXER_CUSTOM_TRI:
-            if (triEnableServoUnarmed()) {
+            if (triIsEnabledServoUnarmed()) {
                 // if unarmed flag set, we always move servo
                 pwmWriteServo(servoIndex++, servo[SERVO_RUDDER]);
             } else {
@@ -414,12 +413,9 @@ void writeServos(void)
 
 STATIC_UNIT_TESTED void servoMixer(void)
 {
-    if ((mixerConfig()->mixerMode == MIXER_TRI) || (mixerConfig()->mixerMode == MIXER_CUSTOM_TRI))
-    {
+    if ((mixerConfig()->mixerMode == MIXER_TRI) || (mixerConfig()->mixerMode == MIXER_CUSTOM_TRI)) {
         triServoMixer(axisPID[YAW]);
-    }
-    else
-    {
+    } else {
         int16_t input[INPUT_SOURCE_COUNT]; // Range [-500:+500]
         static int16_t currentOutput[MAX_SERVO_RULES];
         uint8_t i;

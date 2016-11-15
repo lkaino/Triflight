@@ -100,15 +100,11 @@ STATIC_UNIT_TESTED int16_t pidMultiWiiRewriteCore(int axis, const pidProfile_t *
     // I coefficient (I8) moved before integration to make limiting independent from PID settings
     ITerm = constrain(ITerm, (int32_t) - GYRO_I_MAX << 13, (int32_t) + GYRO_I_MAX << 13);
 
-    if (ABS(gyroRate) < REWRITE_INTEGRATOR_DISABLE_LIMIT_DPS)
-    {
+    if (ABS(gyroRate) < REWRITE_INTEGRATOR_DISABLE_LIMIT_DPS) {
         lastITerm[axis] = ITerm;
-    }
-    else
-    {
+    } else {
         // Shrink only
-        if (ABS(ITerm) < ABS(lastITerm[axis]))
-        {
+        if (ABS(ITerm) < ABS(lastITerm[axis])) {
             lastITerm[axis] = ITerm;
         }
     }

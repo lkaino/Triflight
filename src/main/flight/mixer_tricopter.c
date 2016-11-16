@@ -128,8 +128,8 @@ void pgResetFn_triMixerConfig(triMixerConfig_t *triMixerConfig)
     triMixerConfig->tri_servo_min_adc = 0;
     triMixerConfig->tri_tail_motor_thrustfactor = 138;
     triMixerConfig->tri_tail_servo_speed = 300; // Default for BMS-210DMH at 5V
-    triMixerConfig->tri_dynamic_yaw_minthrottle = 250;
-    triMixerConfig->tri_dynamic_yaw_maxthrottle = 25;
+    triMixerConfig->tri_dynamic_yaw_minthrottle = 500;
+    triMixerConfig->tri_dynamic_yaw_maxthrottle = 12;
     triMixerConfig->tri_servo_angle_at_max = 40;
 }
 
@@ -207,16 +207,13 @@ void triServoMixer(int16_t PIDoutput)
     // Dynamic yaw expects input [-1000, 1000]
     PIDoutput = constrain(PIDoutput, -1000, 1000);
     PIDoutput = getScaledPIDatThrottle(PIDoutput);
+
     if (gpTriMixerConfig->tri_servo_feedback != TRI_SERVO_FB_VIRTUAL) {
         // Read new servo feedback signal sample and run it through filter
         tailServo.ADC = pt1FilterApply4(&feedbackFilter, adcGetChannel(tailServoADCChannel), 70, getdT());
     }
-    // Dynamic yaw expects input [-1000, 1000]
-    PIDoutput = constrain(PIDoutput, -1000, 1000);
     // Linear servo logic only in armed state
     if (ARMING_FLAG(ARMED)) {
-        // Scale the PID output based on tail motor speed (thrust)
-        PIDoutput = getScaledPIDatThrottle(PIDoutput);
         *gpTailServo = getLinearServoValue(gpTailServoConf, PIDoutput);
     } else {
         *gpTailServo = getNormalServoValue(gpTailServoConf, PIDoutput);

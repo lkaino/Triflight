@@ -180,16 +180,13 @@ void triServoMixer(int16_t PIDoutput)
     // Dynamic yaw expects input [-1000, 1000]
     PIDoutput = constrain(PIDoutput, -1000, 1000);
     PIDoutput = getScaledPIDatThrottle(PIDoutput);
+
     if (gpMixerConfig->tri_servo_feedback != TRI_SERVO_FB_VIRTUAL) {
         // Read new servo feedback signal sample and run it through filter
         tailServo.ADC = pt1FilterApply4(&feedbackFilter, adcGetChannel(tailServoADCChannel), 70, getdT());
     }
-    // Dynamic yaw expects input [-1000, 1000]
-    PIDoutput = constrain(PIDoutput, -1000, 1000);
     // Linear servo logic only in armed state
     if (ARMING_FLAG(ARMED)) {
-        // Scale the PID output based on tail motor speed (thrust)
-        PIDoutput = getScaledPIDatThrottle(PIDoutput);
         *gpTailServo = getLinearServoValue(gpTailServoConf, PIDoutput);
     } else {
         *gpTailServo = getNormalServoValue(gpTailServoConf, PIDoutput);

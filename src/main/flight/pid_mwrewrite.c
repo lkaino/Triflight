@@ -147,9 +147,6 @@ STATIC_UNIT_TESTED int16_t pidMultiWiiRewriteCore(int axis, const pidProfile_t *
 void pidMultiWiiRewrite(const pidProfile_t *pidProfile, const controlRateConfig_t *controlRateConfig,
         uint16_t max_angle_inclination, const rollAndPitchTrims_t *angleTrim, const rxConfig_t *rxConfig)
 {
-
-    pidInitFilters(pidProfile);
-
     int horizonLevelStrength = 0;
     if (FLIGHT_MODE(HORIZON_MODE)) {
         // Using Level D as a Sensitivity for Horizon. 0 more rate to 255 more level.

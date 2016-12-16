@@ -44,6 +44,9 @@
 #include "telemetry/mavlink.h"
 #include "telemetry/jetiexbus.h"
 #include "telemetry/ibus.h"
+#include "telemetry/nmea.h"
+
+#include "build/debug.h"
 
 static telemetryConfig_t *telemetryConfig;
 
@@ -80,6 +83,12 @@ void telemetryInit(void)
 
 #if defined(TELEMETRY_IBUS)
     initIbusTelemetry(telemetryConfig);
+#endif
+
+    debug[0] = 100;
+#if defined(TELEMETRY_NMEA)
+    debug[0] = 101;
+    initNMEATelemetry(telemetryConfig);
 #endif
 
     telemetryCheckState();
@@ -136,6 +145,10 @@ void telemetryCheckState(void)
     checkIbusTelemetryState();
 #endif
 
+#if defined(TELEMETRY_NMEA)
+    checkNMEATelemetryState();
+#endif
+
 }
 
 void telemetryProcess(uint32_t currentTime, rxConfig_t *rxConfig, uint16_t deadband3d_throttle)
@@ -173,6 +186,10 @@ void telemetryProcess(uint32_t currentTime, rxConfig_t *rxConfig, uint16_t deadb
 
 #if defined(TELEMETRY_IBUS)
     handleIbusTelemetry();
+#endif
+
+#if defined(TELEMETRY_NMEA)
+    handleNMEATelemetry();
 #endif
 
 }

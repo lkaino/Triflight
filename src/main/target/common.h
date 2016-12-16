@@ -57,6 +57,7 @@
 #define TELEMETRY_IBUS
 #define TELEMETRY_MAVLINK
 #define TELEMETRY_SMARTPORT
+#define TELEMETRY_NMEA
 // These are rather exotic serial protocols
 #define USE_SERIALRX_SUMD
 #define USE_SERIALRX_SUMH

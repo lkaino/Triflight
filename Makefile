@@ -484,7 +484,8 @@ HIGHEND_SRC = \
             telemetry/smartport.c \
             telemetry/mavlink.c \
             telemetry/ltm.c \
-			telemetry/ibus.c
+			telemetry/ibus.c \
+			telemetry/nmea.c
 
 ifeq ($(TARGET),$(filter $(TARGET),$(F4_TARGETS)))
 VCP_SRC = \

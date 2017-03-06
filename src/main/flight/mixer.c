@@ -114,6 +114,7 @@ static float motorMixRange;
 
 float motor[MAX_SUPPORTED_MOTORS];
 float motor_disarmed[MAX_SUPPORTED_MOTORS];
+static float scaledAxisPIDf[3];
 
 mixerMode_e currentMixerMode;
 static motorMixer_t currentMixer[MAX_SUPPORTED_MOTORS];
@@ -347,8 +348,10 @@ bool areMotorsRunning(void)
 
 bool mixerIsOutputSaturated(int axis, float errorRate)
 {
+    UNUSED(errorRate);
     if (axis == FD_YAW && triMixerInUse()) {
-        return errorRate > TRICOPTER_ERROR_RATE_YAW_SATURATED;
+
+        return triIsServoSaturated();
     } else {
         return motorMixRange >= 1.0f;
     }
@@ -686,7 +689,7 @@ void mixTable(uint8_t vbatPidCompensation)
     float scaledAxisPidPitch =
         constrainf((axisPID_P[FD_PITCH] + axisPID_I[FD_PITCH] + axisPID_D[FD_PITCH]) / PID_MIXER_SCALING, -pidSumLimit, pidSumLimit);
     float scaledAxisPidYaw =
-        -constrainf((axisPID_P[FD_YAW] + axisPID_I[FD_YAW]) / PID_MIXER_SCALING, -pidSumLimitYaw, pidSumLimitYaw);
+        -constrainf((axisPID_P[FD_YAW] + axisPID_I[FD_YAW]  + axisPID_D[FD_YAW]) / PID_MIXER_SCALING, -pidSumLimitYaw, pidSumLimitYaw);
     if (isMotorsReversed()) {
         scaledAxisPidRoll = -scaledAxisPidRoll;
         scaledAxisPidPitch = -scaledAxisPidPitch;
@@ -799,4 +802,9 @@ uint16_t convertMotorToExternal(float motorValue)
     }
 
     return externalValue;
+}
+
+float mixGetScaledAxisPidf(int axis)
+{
+    return scaledAxisPIDf[axis];
 }

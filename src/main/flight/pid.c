@@ -50,12 +50,8 @@
 #include "sensors/gyro.h"
 #include "sensors/acceleration.h"
 
-//! Integrator is disabled when rate error exceeds this limit
-#define LUXFLOAT_INTEGRATOR_TRI_YAW_DISABLE_LIMIT_DPS (75.0f)
-
 uint32_t targetPidLooptime;
 static bool pidStabilisationEnabled;
-static bool disableTPAForYaw = false;
 
 static bool inCrashRecoveryMode = false;
 
@@ -275,6 +271,7 @@ static float crashGyroThreshold;
 static float crashSetpointThreshold;
 static float crashLimitYaw;
 static float itermLimit;
+static bool tricopterServoMixerInUse = false;
 
 void pidInitConfig(const pidProfile_t *pidProfile)
 {
@@ -303,7 +300,7 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     crashSetpointThreshold = pidProfile->crash_setpoint_threshold;
     crashLimitYaw = pidProfile->crash_limit_yaw;
     itermLimit = pidProfile->itermLimit;
-    disableTPAForYaw = triMixerInUse();
+    tricopterServoMixerInUse = triMixerInUse();
 }
 
 void pidInit(const pidProfile_t *pidProfile)
@@ -499,7 +496,9 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
         // -----calculate P component and add Dynamic Part based on stick input
         axisPID_P[axis] = Kp[axis] * errorRate;
         if (axis == FD_YAW) {
-            if (!disableTPAForYaw) {
+            if (!tricopterServoMixerInUse) {
+                // Do not use TPA for yaw when tricopter servo mixer is in use,
+                // it will be handled in tricopter mixer.
                 axisPID_P[axis] *=  tpaFactor;
             }
             axisPID_P[axis] = ptermYawFilterApplyFn(ptermYawFilter, axisPID_P[axis]);

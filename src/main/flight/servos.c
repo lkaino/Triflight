@@ -51,8 +51,8 @@
 
 #include "rx/rx.h"
 
-
 extern mixerMode_e currentMixerMode;
+extern float pidSumLimitYaw;
 
 PG_REGISTER_WITH_RESET_FN(servoConfig_t, servoConfig, PG_SERVO_CONFIG, 0);
 
@@ -374,7 +374,7 @@ void writeServos(void)
 STATIC_UNIT_TESTED void servoMixer(void)
 {
     if (triMixerInUse()) {
-        triServoMixer((uint16_t)(axisPID_P[FD_YAW] + axisPID_I[FD_YAW] + axisPID_D[FD_YAW]));
+        triServoMixer(mixGetScaledAxisPidf(FD_YAW), pidSumLimitYaw);
     } else {
         int16_t input[INPUT_SOURCE_COUNT]; // Range [-500:+500]
         static int16_t currentOutput[MAX_SERVO_RULES];

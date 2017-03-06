@@ -43,12 +43,8 @@
 #include "sensors/gyro.h"
 #include "sensors/acceleration.h"
 
-//! Integrator is disabled when rate error exceeds this limit
-#define LUXFLOAT_INTEGRATOR_TRI_YAW_DISABLE_LIMIT_DPS (75.0f)
-
 uint32_t targetPidLooptime;
 static bool pidStabilisationEnabled;
-static bool disableTPAForYaw = false;
 
 float axisPID_P[3], axisPID_I[3], axisPID_D[3];
 
@@ -161,6 +157,7 @@ static float Kp[3], Ki[3], Kd[3], maxVelocity[3];
 static float relaxFactor;
 static float dtermSetpointWeight;
 static float levelGain, horizonGain, horizonTransition, ITermWindupPoint, ITermWindupPointInv;
+static bool tricopterServoMixerInUse = false;
 
 void pidInitConfig(const pidProfile_t *pidProfile) {
     for(int axis = FD_ROLL; axis <= FD_YAW; axis++) {
@@ -178,7 +175,7 @@ void pidInitConfig(const pidProfile_t *pidProfile) {
     ITermWindupPoint = (float)pidProfile->itermWindupPointPercent / 100.0f;
     ITermWindupPointInv = 1.0f / (1.0f - ITermWindupPoint);
 
-    disableTPAForYaw = triMixerInUse();
+    tricopterServoMixerInUse = triMixerInUse();
 }
 
 static float calcHorizonLevelStrength(void) {
@@ -257,7 +254,9 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
         // -----calculate P component and add Dynamic Part based on stick input
         axisPID_P[axis] = Kp[axis] * errorRate;
         if (axis == FD_YAW) {
-            if (!disableTPAForYaw) {
+            if (!tricopterServoMixerInUse) {
+                // Do not use TPA for yaw when tricopter servo mixer is in use,
+                // it will be handled in tricopter mixer.
                 axisPID_P[axis] *=  tpaFactor;
             }
             axisPID_P[axis] = ptermYawFilterApplyFn(ptermYawFilter, axisPID_P[axis]);

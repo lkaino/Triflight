@@ -39,7 +39,7 @@ typedef enum {
  *
  *  @param pTailServoConfig Pointer to tail servo configuration
  *  when in tricopter mixer mode.
- *  @param pTailServo Pointer to tail servo output value.
+ *  @param pTailServoOutput Pointer to tail servo output value.
  *  @return Void.
  */
 void triInitMixer(servoParam_t *pTailServoConfig, int16_t *pTailServo);
@@ -52,10 +52,12 @@ uint16_t triGetCurrentServoAngle(void);
 
 /** @brief Perform tricopter mixer actions.
  *
- *  @param PIDoutput output from PID controller, in scale of [-1000, 1000].
+ *  @param scaledYawPid Scaled yaw output from PID controller, in range of
+ *  [-pidSumLimit, pidSumLimit]
+ *  @param pidSumLimit Limit of the PID sum.
  *  @return Void.
  */
-void triServoMixer(int16_t PIDoutput);
+void triServoMixer(float scaledYawPid, float pidSumLimit);
 
 /** @brief Get amount of motor correction that must be applied
  * for given motor.
@@ -80,6 +82,12 @@ _Bool triIsEnabledServoUnarmed(void);
  */
 _Bool triMixerInUse(void);
 
+/** @brief Is tricopter servo output saturated.
+ *
+ *  @return true if is, otherwise false.
+ */
+_Bool triIsServoSaturated(void);
+
 typedef struct triMixerConfig_s{
     uint8_t tri_unarmed_servo;              // send tail servo correction pulses even when unarmed
     uint8_t tri_servo_feedback;
@@ -96,6 +104,8 @@ typedef struct triMixerConfig_s{
 } triMixerConfig_t;
 
 #ifdef MIXER_TRICOPTER_INTERNALS
+
+#include "drivers/adc.h"
 
 typedef enum {
     TT_IDLE = 0,
@@ -148,10 +158,17 @@ typedef struct thrustTorque_s {
 typedef struct tailServo_s {
     int32_t maxYawForce;
     float thrustFactor;
-    int16_t maxAngle;
+    servoParam_t *pConf; //!< Pointer to the tail servo configuration
+    int16_t *pOutput; //!< Pointer to the servo output (setpoint) that controls the PWM output
+    AdcChannel ADCChannel;
+    int16_t maxDeflection;
     int16_t speed;
-    uint16_t angle;
+    uint16_t angleAtMin;
+    uint16_t angleAtMax;
+    uint16_t angle; //!< Current measured angle
     uint16_t ADC;
+    _Bool saturated;
+    uint8_t saturationRange; //!< Servo angle range around setpoint where servo is not saturated (one direction)
 } tailServo_t;
 
 typedef struct tailMotor_s {
@@ -161,6 +178,7 @@ typedef struct tailMotor_s {
     int16_t accelerationDelay_angle;
     int16_t decelerationDelay_angle;
     float virtualFeedBack;
+    float acceleration; //!< Motor acceleration in output units (us) / second
 } tailMotor_t;
 
 typedef struct tailTune_s {

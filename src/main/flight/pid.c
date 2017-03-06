@@ -43,12 +43,8 @@
 #include "sensors/gyro.h"
 #include "sensors/acceleration.h"
 
-//! Integrator is disabled when rate error exceeds this limit
-#define LUXFLOAT_INTEGRATOR_TRI_YAW_DISABLE_LIMIT_DPS (75.0f)
-
 uint32_t targetPidLooptime;
 static bool pidStabilisationEnabled;
-static bool disableTPAForYaw = false;
 
 float axisPIDf[3];
 
@@ -167,6 +163,7 @@ static float Kp[3], Ki[3], Kd[3], maxVelocity[3];
 static float relaxFactor;
 static float dtermSetpointWeight;
 static float levelGain, horizonGain, horizonTransition, ITermWindupPoint, ITermWindupPointInv;
+static bool tricopterServoMixerInUse = false;
 
 void pidInitConfig(const pidProfile_t *pidProfile) {
     for(int axis = FD_ROLL; axis <= FD_YAW; axis++) {
@@ -184,7 +181,7 @@ void pidInitConfig(const pidProfile_t *pidProfile) {
     ITermWindupPoint = (float)pidProfile->itermWindupPointPercent / 100.0f;
     ITermWindupPointInv = 1.0f / (1.0f - ITermWindupPoint);
 
-    disableTPAForYaw = triMixerInUse();
+    tricopterServoMixerInUse = triMixerInUse();
 }
 
 static float calcHorizonLevelStrength(void) {
@@ -228,6 +225,22 @@ static float accelerationLimit(int axis, float currentPidSetpoint) {
     return currentPidSetpoint;
 }
 
+static bool axisActuatorIsSaturated(int axis, float motorMixRange) {
+    bool ret;
+
+    if (!tricopterServoMixerInUse) {
+        ret = motorMixRange >= 1.0f;
+    } else {
+        if (axis == FD_YAW) {
+            ret = triIsServoSaturated();
+        } else {
+            ret = motorMixRange >= 1.0f;
+        }
+    }
+
+    return ret;
+}
+
 // Betaflight pid controller, which will be maintained in the future with additional features specialised for current (mini) multirotor usage.
 // Based on 2DOF reference design (matlab)
 void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *angleTrim)
@@ -263,7 +276,9 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
         // -----calculate P component and add Dynamic Part based on stick input
         float PTerm;
         if (axis == FD_YAW) {
-            if (disableTPAForYaw) {
+            if (tricopterServoMixerInUse) {
+                // Do not use TPA for yaw when tricopter servo mixer is in use,
+                // it will be handled in tricopter mixer.
                 PTerm = Kp[axis] * errorRate;
             }
             else {
@@ -278,20 +293,9 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
 
         // -----calculate I component
         float ITerm = previousGyroIf[axis];
-        if ((motorMixRange < 1.0f) || ((axis == FD_YAW) && triMixerInUse())) {
-            // Only increase ITerm if motor output is not saturated
+        if (!axisActuatorIsSaturated(axis, motorMixRange)) {
+            // Only increase ITerm if axis actuator is not saturated
             ITerm += Ki[axis] * errorRate * dT * dynKi * itermAccelerator;
-
-            if ((axis == FD_YAW) && triMixerInUse()) {
-                if (fabsf(gyroRate) < LUXFLOAT_INTEGRATOR_TRI_YAW_DISABLE_LIMIT_DPS) {
-                    previousGyroIf[axis] = ITerm;
-                } else {
-                    // Shrink only
-                    if (fabsf(ITerm) < fabsf(previousGyroIf[axis])) {
-                        previousGyroIf[axis] = ITerm;
-                    }
-                }
-            }
             previousGyroIf[axis] = ITerm;
         }
 

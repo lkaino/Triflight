@@ -62,6 +62,7 @@ static float motorMixRange;
 
 int16_t motor[MAX_SUPPORTED_MOTORS];
 int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];
+static float scaledAxisPIDf[3];
 
 static mixerConfig_t *mixerConfig;
 static flight3DConfig_t *flight3DConfig;
@@ -479,7 +480,6 @@ void mixTable(pidProfile_t *pidProfile)
     throttle = constrainf(throttle / currentThrottleInputRange, 0.0f, 1.0f);
     const float motorOutputRange = motorOutputMax - motorOutputMin;
 
-    float scaledAxisPIDf[3];
     // Limit the PIDsum
     for (int axis = 0; axis < 3; axis++) {
         scaledAxisPIDf[axis] = constrainf(axisPIDf[axis] / PID_MIXER_SCALING, -pidProfile->pidSumLimit, pidProfile->pidSumLimit);
@@ -595,4 +595,9 @@ uint16_t convertMotorToExternal(uint16_t motorValue)
 #endif
 
     return externalValue;
+}
+
+float mixGetScaledAxisPidf(int axis)
+{
+    return scaledAxisPIDf[axis];
 }

@@ -719,6 +719,7 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             flight/failsafe.c \
             flight/imu.c \
             flight/mixer.c \
+            flight/mixer_tricopter.c \
             flight/pid.c \
             flight/servos.c \
             io/beeper.c \

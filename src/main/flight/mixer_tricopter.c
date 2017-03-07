@@ -145,7 +145,7 @@ void triInitMixer(servoParam_t *pTailServoConfig, int16_t *pTailServoOutput)
     throttleHalfRange = throttleRange / 2.0f;
     throttleMidPoint = motorConfig()->minthrottle + throttleHalfRange;
     dynamicYawGainAtMin = gpTriMixerConfig->tri_dynamic_yaw_minthrottle / 100.0f;
-    dynamicYawGainAtMin = gpTriMixerConfig->tri_dynamic_yaw_maxthrottle / 100.0f;
+    dynamicYawGainAtMax = gpTriMixerConfig->tri_dynamic_yaw_maxthrottle / 100.0f;
     const float tri_motor_acceleration_float = (float)gpTriMixerConfig->tri_motor_acceleration / 100;
     tailMotor.acceleration = (float) throttleRange / tri_motor_acceleration_float;
     initYawForceCurve();
@@ -783,7 +783,9 @@ static void predictGyroOnDeceleration(void)
         // Tests have shown that this is mostly needed when throttle is cut (motor decelerating), so only
         // set the expected gyro error in that case.
         // Set the expected axis error based on tail motor acceleration and configured gain
-        pidSetExpectedGyroError(FD_YAW, acceleration * gpTriMixerConfig->tri_motor_acc_yaw_correction / 10);
+        pidSetExpectedGyroError(FD_YAW, acceleration * gpTriMixerConfig->tri_motor_acc_yaw_correction);
+    } else {
+        pidSetExpectedGyroError(FD_YAW, 0);
     }
 }
 

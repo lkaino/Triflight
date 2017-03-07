@@ -62,6 +62,7 @@
 #define TRI_TAIL_SERVO_ANGLE_MID                (900)
 #define TRI_YAW_FORCE_CURVE_SIZE                (100)
 #define TRI_TAIL_SERVO_MAX_ANGLE                (500)
+#define TRI_YAW_PITCH_CORRECTION_GAIN           (2.5f)
 #define TRI_SERVO_SATURATION_DPS_ERROR_LIMIT    (75.0f)
 
 static const uint8_t TRI_TAIL_MOTOR_INDEX = 0;
@@ -228,17 +229,11 @@ int16_t triGetMotorCorrection(uint8_t motorIndex)
             angleDiff = (int32_t) maxPhaseShift * angleDiff / ABS(angleDiff);
         }
         const int16_t futureServoAngle = constrain(servoAngle + angleDiff, tailServo.angleAtMin, tailServo.angleAtMax);
-        // Increased yaw authority at min throttle, always calculate the pitch
-        // correction on at least half motor output. This produces a little bit
-        // more forward pitch, but tested to be negligible.
-        // TODO: this is not the best way to achieve this, but how could the min_throttle
-        // pitch correction be calculated, as the thrust is zero?
-        uint16_t throttleMotorOutput = tailMotor.virtualFeedBack - motorConfig()->minthrottle;
-        throttleMotorOutput = constrain(throttleMotorOutput, throttleRange * 2 / 3, 1000);
 
-        correction = (throttleMotorOutput
-                * getPitchCorrectionAtTailAngle(DEGREES_TO_RADIANS(futureServoAngle / 10.0f), tailServo.thrustFactor))
-                - throttleMotorOutput;
+        correction = (throttleRange * getPitchCorrectionAtTailAngle(DEGREES_TO_RADIANS(futureServoAngle / 10.0f), tailServo.thrustFactor)) - throttleRange;
+
+        // Multiply the correction to get more authority
+        correction *= TRI_YAW_PITCH_CORRECTION_GAIN;
     }
 
     return correction;

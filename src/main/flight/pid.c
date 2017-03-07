@@ -84,18 +84,18 @@ float getdT()
 const angle_index_t rcAliasToAngleIndexMap[] = { AI_ROLL, AI_PITCH };
 
 static filterApplyFnPtr dtermNotchFilterApplyFn;
-static void *dtermFilterNotch[2];
+static void *dtermFilterNotch[3];
 static filterApplyFnPtr dtermLpfApplyFn;
-static void *dtermFilterLpf[2];
+static void *dtermFilterLpf[3];
 static filterApplyFnPtr ptermYawFilterApplyFn;
 static void *ptermYawFilter;
 
 void pidInitFilters(const pidProfile_t *pidProfile)
 {
-    static biquadFilter_t biquadFilterNotch[2];
-    static pt1Filter_t pt1Filter[2];
-    static biquadFilter_t biquadFilter[2];
-    static firFilterDenoise_t denoisingFilter[2];
+    static biquadFilter_t biquadFilterNotch[3];
+    static pt1Filter_t pt1Filter[3];
+    static biquadFilter_t biquadFilter[3];
+    static firFilterDenoise_t denoisingFilter[3];
     static pt1Filter_t pt1FilterYaw;
 
     uint32_t pidFrequencyNyquist = (1.0f / dT) / 2; // No rounding needed
@@ -107,7 +107,7 @@ void pidInitFilters(const pidProfile_t *pidProfile)
     } else {
         dtermNotchFilterApplyFn = (filterApplyFnPtr)biquadFilterApply;
         const float notchQ = filterGetNotchQ(pidProfile->dterm_notch_hz, pidProfile->dterm_notch_cutoff);
-        for (int axis = FD_ROLL; axis <= FD_PITCH; axis++) {
+        for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
             dtermFilterNotch[axis] = &biquadFilterNotch[axis];
             biquadFilterInit(dtermFilterNotch[axis], pidProfile->dterm_notch_hz, targetPidLooptime, notchQ, FILTER_NOTCH);
         }
@@ -122,21 +122,21 @@ void pidInitFilters(const pidProfile_t *pidProfile)
             break;
         case FILTER_PT1:
             dtermLpfApplyFn = (filterApplyFnPtr)pt1FilterApply;
-            for (int axis = FD_ROLL; axis <= FD_PITCH; axis++) {
+            for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
                 dtermFilterLpf[axis] = &pt1Filter[axis];
                 pt1FilterInit(dtermFilterLpf[axis], pidProfile->dterm_lpf_hz, dT);
             }
             break;
         case FILTER_BIQUAD:
             dtermLpfApplyFn = (filterApplyFnPtr)biquadFilterApply;
-            for (int axis = FD_ROLL; axis <= FD_PITCH; axis++) {
+            for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
                 dtermFilterLpf[axis] = &biquadFilter[axis];
                 biquadFilterInitLPF(dtermFilterLpf[axis], pidProfile->dterm_lpf_hz, targetPidLooptime);
             }
             break;
         case FILTER_FIR:
             dtermLpfApplyFn = (filterApplyFnPtr)firFilterDenoiseUpdate;
-            for (int axis = FD_ROLL; axis <= FD_PITCH; axis++) {
+            for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
                 dtermFilterLpf[axis] = &denoisingFilter[axis];
                 firFilterDenoiseInit(dtermFilterLpf[axis], pidProfile->dterm_lpf_hz, targetPidLooptime);
             }
@@ -223,7 +223,7 @@ static float accelerationLimit(int axis, float currentPidSetpoint) {
 // Based on 2DOF reference design (matlab)
 void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *angleTrim)
 {
-    static float previousRateError[2];
+    static float previousRateError[3];
     const float tpaFactor = getThrottlePIDAttenuation();
     const float motorMixRange = getMotorMixRange();
 

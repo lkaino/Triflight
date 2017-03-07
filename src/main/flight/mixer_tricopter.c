@@ -479,7 +479,7 @@ STATIC_UNIT_TESTED void tailTuneModeThrustTorque(thrustTorque_t *pTT, const bool
             pTT->state = TT_WAIT;
             pTT->servoAvgAngle.sum = 0;
             pTT->servoAvgAngle.numOf = 0;
-            pTT->tailTuneGyroLimit = 3.5f;
+            pTT->tailTuneGyroLimit = 4.5f;
         }
         break;
     case TT_WAIT:
@@ -526,11 +526,11 @@ STATIC_UNIT_TESTED void tailTuneModeThrustTorque(thrustTorque_t *pTT, const bool
                         pTT->timestamp_ms = GetCurrentTime_ms();
                     }
                 }
-            } else if (IsDelayElapsed_ms(pTT->lastAdjTime_ms, 1000)) {
+            } else if (IsDelayElapsed_ms(pTT->lastAdjTime_ms, 500)) {
                 // Sticks are OK but there has not been any valid samples in 1 s, try to loosen the gyro criteria a little
                 pTT->tailTuneGyroLimit += 0.1f;
                 pTT->lastAdjTime_ms = GetCurrentTime_ms();
-                if (pTT->tailTuneGyroLimit > 8.0f) {
+                if (pTT->tailTuneGyroLimit > 10.0f) {
                     // If there are not enough samples by now it is a fail.
                     pTT->state = TT_FAIL;
                 }

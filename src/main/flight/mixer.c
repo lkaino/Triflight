@@ -283,10 +283,9 @@ float getMotorMixRange()
 
 bool mixerIsOutputSaturated(int axis, float errorRate)
 {
-    UNUSED(errorRate);
     if (axis == FD_YAW && triMixerInUse()) {
 
-        return triIsServoSaturated();
+        return triIsServoSaturated(errorRate);
     } else {
         return motorMixRange >= 1.0f;
     }

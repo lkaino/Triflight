@@ -25,6 +25,7 @@
 #include "platform.h"
 
 #include "build/build_config.h"
+#include "build/debug.h"
 
 #include "common/maths.h"
 #include "common/axis.h"
@@ -56,17 +57,13 @@
 #include "fc/fc_rc.h"
 #include "fc/config.h"
 #include "fc/runtime_config.h"
-//#include "fc/rate_profile.h"
 #include "fc/rc_controls.h"
 #include "fc/rc_modes.h"
 
-#define TRI_TAIL_SERVO_ANGLE_MID    (900)
-#define TRI_YAW_FORCE_CURVE_SIZE    (100)
-#define TRI_TAIL_SERVO_MAX_ANGLE    (500)
-/*! Range of whole servo range in percents. Servo is not saturated when it is
- * within this range from the setpoint angle.
- */
-#define TRI_SERVO_SATURATION_RANGE_IN_PERCENT  (0.1f)
+#define TRI_TAIL_SERVO_ANGLE_MID                (900)
+#define TRI_YAW_FORCE_CURVE_SIZE                (100)
+#define TRI_TAIL_SERVO_MAX_ANGLE                (500)
+#define TRI_SERVO_SATURATION_DPS_ERROR_LIMIT    (75.0f)
 
 static const uint8_t TRI_TAIL_MOTOR_INDEX = 0;
 static const int32_t TRI_YAW_FORCE_PRECISION = 1000;
@@ -110,7 +107,6 @@ static void predictGyroOnDeceleration(void);
 static float scalePIDBasedOnTailMotorSpeed(float scaledPidOutput, float pidSumLimit);
 static void tailMotorStep(int16_t setpoint, float dT);
 static int8_t triGetServoDirection(void);
-static void checkForServoSaturation(void);
 
 PG_REGISTER_WITH_RESET_FN(triMixerConfig_t, triMixerConfig, PG_TRICOPTER_CONFIG, 0);
 #include "target.h"
@@ -144,7 +140,6 @@ void triInitMixer(servoParam_t *pTailServoConfig, int16_t *pTailServoOutput)
     tailServo.angleAtMin = TRI_TAIL_SERVO_ANGLE_MID - tailServo.maxDeflection;
     tailServo.angleAtMax = TRI_TAIL_SERVO_ANGLE_MID + tailServo.maxDeflection;
     tailServo.speed = gpTriMixerConfig->tri_tail_servo_speed;
-    tailServo.saturationRange = tailServo.maxDeflection * TRI_SERVO_SATURATION_RANGE_IN_PERCENT;
     tailServo.saturated = false;
     throttleRange = motorConfig()->maxthrottle - motorConfig()->minthrottle;
     throttleHalfRange = throttleRange / 2.0f;
@@ -234,9 +229,6 @@ void triServoMixer(float scaledYawPid, float pidSumLimit)
 
     // Check for tail motor decelaration and determine expected produced yaw error
     predictGyroOnDeceleration();
-
-    // Check if the tail servo is saturated
-    checkForServoSaturation();
 }
 
 int16_t triGetMotorCorrection(uint8_t motorIndex)
@@ -285,13 +277,17 @@ _Bool triIsEnabledServoUnarmed(void)
 _Bool triMixerInUse(void)
 {
     const _Bool isEnabledServoUnarmed = ((mixerConfig()->mixerMode == MIXER_TRI) || (mixerConfig()->mixerMode == MIXER_CUSTOM_TRI));
-    
+
     return isEnabledServoUnarmed;
 }
 
-_Bool triIsServoSaturated(void)
+_Bool triIsServoSaturated(float rateError)
 {
-    return tailServo.saturated;
+    if (fabsf(rateError) > 75.0f) {
+        return true;
+    } else {
+        return false;
+    }
 }
 
 static uint16_t getServoValueAtAngle(servoParam_t *servoConf, uint16_t angle)
@@ -840,17 +836,4 @@ static int8_t triGetServoDirection(void)
     const int8_t direction = (int8_t) servoDirection(SERVO_RUDDER, INPUT_STABILIZED_YAW);
 
     return direction;
-}
-
-static void checkForServoSaturation(void)
-{
-    const uint16_t setpointAngle = getServoAngle(tailServo.pConf, *tailServo.pOutput);
-
-    if ((tailServo.angle > (setpointAngle - tailServo.saturationRange)) &&
-        (tailServo.angle < (setpointAngle + tailServo.saturationRange))) {
-        tailServo.saturated = false;
-    } else {
-        tailServo.saturated = true;
-    }
-
 }

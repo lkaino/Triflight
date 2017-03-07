@@ -189,9 +189,7 @@ void servoMixerInit(servoMixer_t *initialCustomServoMixers)
         servo[i] = DEFAULT_SERVO_MIDDLE;
     }
 
-    if (triMixerInUse()) {
-        triInitMixer(&servoConf[SERVO_RUDDER], &servo[SERVO_RUDDER]);
-    }
+    triInitMixer(&servoConf[SERVO_RUDDER], &servo[SERVO_RUDDER]);
 }
 
 void loadCustomServoMixer(void)

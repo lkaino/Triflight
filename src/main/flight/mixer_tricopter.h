@@ -86,7 +86,7 @@ _Bool triMixerInUse(void);
  *
  *  @return true if is, otherwise false.
  */
-_Bool triIsServoSaturated(void);
+_Bool triIsServoSaturated(float rateError);
 
 typedef struct triMixerConfig_s{
     uint8_t tri_unarmed_servo;              // send tail servo correction pulses even when unarmed

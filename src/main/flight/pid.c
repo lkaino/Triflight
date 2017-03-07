@@ -225,14 +225,14 @@ static float accelerationLimit(int axis, float currentPidSetpoint) {
     return currentPidSetpoint;
 }
 
-static bool axisActuatorIsSaturated(int axis, float motorMixRange) {
+static bool axisActuatorIsSaturated(int axis, float motorMixRange, float rateError) {
     bool ret;
 
     if (!tricopterServoMixerInUse) {
         ret = motorMixRange >= 1.0f;
     } else {
         if (axis == FD_YAW) {
-            ret = triIsServoSaturated();
+            ret = triIsServoSaturated(rateError);
         } else {
             ret = motorMixRange >= 1.0f;
         }
@@ -293,10 +293,20 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
 
         // -----calculate I component
         float ITerm = previousGyroIf[axis];
-        if (!axisActuatorIsSaturated(axis, motorMixRange)) {
+        const float newGyroIf = ITerm + Ki[axis] * errorRate * dT * dynKi * itermAccelerator;
+        if (!axisActuatorIsSaturated(axis, motorMixRange, errorRate)) {
             // Only increase ITerm if axis actuator is not saturated
-            ITerm += Ki[axis] * errorRate * dT * dynKi * itermAccelerator;
-            previousGyroIf[axis] = ITerm;
+            ITerm = newGyroIf;
+            previousGyroIf[axis] = newGyroIf;
+        }
+        else
+        {
+            // In case saturated, allow shrink only
+            if (fabsf(newGyroIf) < fabsf(ITerm))
+            {
+                ITerm = newGyroIf;
+                previousGyroIf[axis] = newGyroIf;
+            }
         }
 
         // -----calculate D component

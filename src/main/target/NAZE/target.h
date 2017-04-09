@@ -147,7 +147,7 @@
 #define RSSI_ADC_PIN            PA1
 #define EXTERNAL1_ADC_PIN       PA7
 
-#define LED_STRIP
+//#define LED_STRIP
 
 #undef GPS
 

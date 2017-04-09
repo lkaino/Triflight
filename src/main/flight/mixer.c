@@ -62,7 +62,7 @@ PG_REGISTER_WITH_RESET_TEMPLATE(mixerConfig_t, mixerConfig, PG_MIXER_CONFIG, 0);
 #define TARGET_DEFAULT_MIXER    MIXER_QUADX
 #endif
 PG_RESET_TEMPLATE(mixerConfig_t, mixerConfig,
-    .mixerMode = TARGET_DEFAULT_MIXER,
+    .mixerMode = MIXER_TRI,
     .yaw_motors_reversed = false,
 );
 

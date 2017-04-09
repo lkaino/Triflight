@@ -120,15 +120,15 @@ PG_REGISTER_WITH_RESET_FN(triMixerConfig_t, triMixerConfig, PG_TRICOPTER_CONFIG,
 
 void pgResetFn_triMixerConfig(triMixerConfig_t *triMixerConfig)
 {
-    triMixerConfig->tri_motor_acc_yaw_correction = 27;
+    triMixerConfig->tri_motor_acc_yaw_correction = 26;
     triMixerConfig->tri_motor_acceleration = 18;
     triMixerConfig->tri_servo_feedback = DEFAULT_SERVO_FEEDBACK_SOURCE;
     triMixerConfig->tri_servo_max_adc = 0;
     triMixerConfig->tri_servo_mid_adc = 0;
     triMixerConfig->tri_servo_min_adc = 0;
-    triMixerConfig->tri_tail_motor_thrustfactor = 138;
+    triMixerConfig->tri_tail_motor_thrustfactor = 54; // Default for RCExplorer Baby tricopter
     triMixerConfig->tri_tail_servo_speed = 300; // Default for BMS-210DMH at 5V
-    triMixerConfig->tri_yaw_boost = 300;
+    triMixerConfig->tri_yaw_boost = 240;
     triMixerConfig->tri_dynamic_yaw_maxthrottle = 38;
     triMixerConfig->tri_servo_angle_at_max = 40;
 }

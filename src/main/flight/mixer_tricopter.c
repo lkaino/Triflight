@@ -60,6 +60,7 @@
 #include "fc/rc_controls.h"
 #include "fc/rc_modes.h"
 
+#define USE_AUX_CHANNEL_TUNING                  (0)
 #define TRI_TAIL_SERVO_ANGLE_MID                (900)
 #define TRI_YAW_FORCE_CURVE_SIZE                (100)
 #define TRI_TAIL_SERVO_MAX_ANGLE                (500)
@@ -106,6 +107,9 @@ static void predictGyroOnDeceleration(void);
 static float scalePIDBasedOnTailMotorSpeed(float scaledPidOutput, float pidSumLimit);
 static void tailMotorStep(int16_t setpoint, float dT);
 static int8_t triGetServoDirection(void);
+#if USE_AUX_CHANNEL_TUNING
+static int16_t scaleAUXChannel(u8 channel, int16_t scale);
+#endif
 
 PG_REGISTER_WITH_RESET_FN(triMixerConfig_t, triMixerConfig, PG_TRICOPTER_CONFIG, 0);
 #include "target.h"
@@ -794,3 +798,13 @@ static int8_t triGetServoDirection(void)
 
     return direction;
 }
+
+#if USE_AUX_CHANNEL_TUNING
+static int16_t scaleAUXChannel(u8 channel, int16_t scale)
+{
+    int16_t constrained = constrain(rcData[channel], 1000, 2000);
+    constrained -= 1000;
+
+    return constrained * scale / 1000;
+}
+#endif

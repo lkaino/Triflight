@@ -119,8 +119,8 @@
 
 #define SERIAL_PORT_COUNT 6
 
-#define USE_ESCSERIAL
-#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
+//#define USE_ESCSERIAL
+//#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
 
 #define UART1_TX_PIN            PA9
 #define UART1_RX_PIN            PA10
@@ -149,9 +149,9 @@
 
 #define LED_STRIP
 
-#define SONAR
-#define SONAR_ECHO_PIN          PB1
-#define SONAR_TRIGGER_PIN       PB0
+//#define SONAR
+//#define SONAR_ECHO_PIN          PB1
+//#define SONAR_TRIGGER_PIN       PB0
 
 #define DEFAULT_FEATURES        FEATURE_BLACKBOX
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM

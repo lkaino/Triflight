@@ -99,7 +99,7 @@ typedef struct triMixerConfig_s{
     uint16_t tri_motor_acc_yaw_correction;
     uint16_t dummy;
     uint8_t tri_motor_acceleration;
-    uint16_t tri_dynamic_yaw_minthrottle;
+    uint16_t tri_yaw_boost;
     uint16_t tri_dynamic_yaw_maxthrottle;
     uint16_t tri_servo_angle_at_max;
 } triMixerConfig_t;

@@ -63,7 +63,7 @@
 #define TRI_TAIL_SERVO_ANGLE_MID                (900)
 #define TRI_YAW_FORCE_CURVE_SIZE                (100)
 #define TRI_TAIL_SERVO_MAX_ANGLE                (500)
-#define TRI_SERVO_SATURATION_DPS_ERROR_LIMIT    (75.0f)
+#define TRI_SERVO_SATURATION_DPS_ERROR_LIMIT    (100.0f)
 
 static const uint8_t TRI_TAIL_MOTOR_INDEX = 0;
 static const int32_t TRI_YAW_FORCE_PRECISION = 1000;

@@ -665,7 +665,7 @@ const clivalue_t valueTable[] = {
     { "tri_servo_feedback",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &triMixerConfig()->tri_servo_feedback, .config.lookup = { TABLE_SERVO_FEEDBACK }},
     { "tri_motor_acc_yaw_correction",VAR_UINT16| MASTER_VALUE, &triMixerConfig()->tri_motor_acc_yaw_correction, .config.minmax = { 0, TRI_MOTOR_ACC_CORRECTION_MAX }},
     { "tri_motor_acceleration",     VAR_FLOAT  | MASTER_VALUE, &triMixerConfig()->tri_motor_acceleration, .config.minmax = { 0.01f, 1.0f }},
-    { "tri_dynamic_yaw_boost",      VAR_UINT16 | MASTER_VALUE, &triMixerConfig()->tri_yaw_boost, .config.minmax = { 0, 700}},
+    { "tri_yaw_boost",              VAR_UINT16 | MASTER_VALUE, &triMixerConfig()->tri_yaw_boost, .config.minmax = { 0, 700}},
     { "tri_dynamic_yaw_maxthrottle",VAR_UINT16 | MASTER_VALUE, &triMixerConfig()->tri_dynamic_yaw_maxthrottle, .config.minmax = { 0, 100}},
 #endif
 

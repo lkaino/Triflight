@@ -643,7 +643,7 @@ static void tailTuneModeServoSetup(struct servoSetup_t *pSS, servoParam_t *pServ
                     *pSS->cal.avg.pCalibConfig = pSS->cal.avg.sum / pSS->cal.avg.numOf;
                     pSS->cal.done = true;
                 } else {
-                    pSS->cal.avg.sum += tailServo.ADC;
+                    pSS->cal.avg.sum += tailServo.ADCRaw;
                     pSS->cal.avg.numOf++;
                 }
             }
@@ -652,7 +652,7 @@ static void tailTuneModeServoSetup(struct servoSetup_t *pSS, servoParam_t *pServ
             switch (pSS->cal.subState) {
             case SS_C_MIN:
                 // Wait for the servo to reach min position
-                if (tailServo.ADC < (gpTriMixerConfig->tri_servo_min_adc + 10)) {
+                if (tailServo.ADCRaw < (gpTriMixerConfig->tri_servo_min_adc + 10)) {
                     if (!pSS->cal.waitingServoToStop) {
                         pSS->cal.avg.sum += GetCurrentDelay_ms(pSS->cal.timestamp_ms);
                         pSS->cal.avg.numOf++;
@@ -680,7 +680,7 @@ static void tailTuneModeServoSetup(struct servoSetup_t *pSS, servoParam_t *pServ
                 break;
             case SS_C_MAX:
                 // Wait for the servo to reach max position
-                if (tailServo.ADC > (gpTriMixerConfig->tri_servo_max_adc - 10)) {
+                if (tailServo.ADCRaw > (gpTriMixerConfig->tri_servo_max_adc - 10)) {
                     if (!pSS->cal.waitingServoToStop) {
                         pSS->cal.avg.sum += GetCurrentDelay_ms(pSS->cal.timestamp_ms);
                         pSS->cal.avg.numOf++;
@@ -711,9 +711,9 @@ static void updateServoAngle(float dT)
     } else {
         static pt1Filter_t feedbackFilter;
         // Read new servo feedback signal sample and run it through filter
-        const uint16_t ADC = pt1FilterApply4(&feedbackFilter, adcGetChannel(tailServo.ADCChannel), 70, dT);
-        tailServo.angle = feedbackServoStep(gpTriMixerConfig, ADC);
-        tailServo.ADC = ADC;
+        const uint16_t ADCRaw = pt1FilterApply4(&feedbackFilter, adcGetChannel(tailServo.ADCChannel), 70, dT);
+        tailServo.angle = feedbackServoStep(gpTriMixerConfig, ADCRaw);
+        tailServo.ADCRaw = ADCRaw;
     }
 }
 

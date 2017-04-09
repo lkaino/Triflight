@@ -56,7 +56,7 @@
 
 #define SERIAL_PORT_COUNT       6
 
-#define USE_ESCSERIAL
+//#define USE_ESCSERIAL
 #define ESCSERIAL_TIMER_TX_PIN  PB7  // (HARDARE=0,PPM)
 
 #define UART1_TX_PIN            PA9

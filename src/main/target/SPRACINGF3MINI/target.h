@@ -95,16 +95,16 @@
 #define SERIAL_PORT_COUNT       6
 #endif
 
-#define USE_ESCSERIAL
-#ifdef TINYBEEF3
-#define ESCSERIAL_TIMER_TX_PIN  PA15 // (Hardware=0)
-#else
-#if defined(SPRACINGF3MINI_REV) && (SPRACINGF3MINI_REV <= 1)
-#define ESCSERIAL_TIMER_TX_PIN  PB5  // (Hardware=0)
-#else
-#define ESCSERIAL_TIMER_TX_PIN  PB4  // (Hardware=0)
-#endif
-#endif
+//#define USE_ESCSERIAL
+//#ifdef TINYBEEF3
+//#define ESCSERIAL_TIMER_TX_PIN  PA15 // (Hardware=0)
+//#else
+//#if defined(SPRACINGF3MINI_REV) && (SPRACINGF3MINI_REV <= 1)
+//#define ESCSERIAL_TIMER_TX_PIN  PB5  // (Hardware=0)
+//#else
+//#define ESCSERIAL_TIMER_TX_PIN  PB4  // (Hardware=0)
+//#endif
+//#endif
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

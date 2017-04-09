@@ -147,8 +147,8 @@
 #define SONAR_ECHO_PIN          PB1
 #define SONAR_TRIGGER_PIN       PB0
 
-#define USE_ESCSERIAL
-#define ESCSERIAL_TIMER_TX_PIN  PB3  // (HARDARE=0,PPM)
+//#define USE_ESCSERIAL
+//#define ESCSERIAL_TIMER_TX_PIN  PB3  // (HARDARE=0,PPM)
 
 #define UART1_TX_PIN            PA9
 #define UART1_RX_PIN            PA10

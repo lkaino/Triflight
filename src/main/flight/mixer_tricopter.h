@@ -169,7 +169,7 @@ typedef struct tailServo_s {
     uint16_t angleAtMin;
     uint16_t angleAtMax;
     uint16_t angle; //!< Current measured angle
-    uint16_t ADC;
+    uint16_t ADCRaw;
     _Bool saturated;
 } tailServo_t;
 

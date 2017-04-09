@@ -187,9 +187,9 @@
 
 #define USE_ESC_SENSOR
 
-#define SONAR
-#define SONAR_TRIGGER_PIN       PB0
-#define SONAR_ECHO_PIN          PB1
+//#define SONAR
+//#define SONAR_TRIGGER_PIN       PB0
+//#define SONAR_ECHO_PIN          PB1
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

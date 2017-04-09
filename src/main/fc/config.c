@@ -144,15 +144,15 @@ static void resetControlRateConfig(controlRateConfig_t *controlRateConfig)
 
 static void resetPidProfile(pidProfile_t *pidProfile)
 {
-    pidProfile->P8[ROLL] = 44;
+    pidProfile->P8[ROLL] = 24;
     pidProfile->I8[ROLL] = 40;
-    pidProfile->D8[ROLL] = 30;
-    pidProfile->P8[PITCH] = 58;
+    pidProfile->D8[ROLL] = 27;
+    pidProfile->P8[PITCH] = 39;
     pidProfile->I8[PITCH] = 50;
-    pidProfile->D8[PITCH] = 35;
-    pidProfile->P8[YAW] = 70;
-    pidProfile->I8[YAW] = 45;
-    pidProfile->D8[YAW] = 20;
+    pidProfile->D8[PITCH] = 20;
+    pidProfile->P8[YAW] = 107;
+    pidProfile->I8[YAW] = 40;
+    pidProfile->D8[YAW] = 105;
     pidProfile->P8[PIDALT] = 50;
     pidProfile->I8[PIDALT] = 0;
     pidProfile->D8[PIDALT] = 0;
@@ -186,7 +186,7 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->levelAngleLimit = 55;
     pidProfile->levelSensitivity = 55;
     pidProfile->setpointRelaxRatio = 100;
-    pidProfile->dtermSetpointWeight = 60;
+    pidProfile->dtermSetpointWeight = 100;
     pidProfile->yawRateAccelLimit = 10.0f;
     pidProfile->rateAccelLimit = 0.0f;
     pidProfile->itermThrottleThreshold = 350;
@@ -251,7 +251,7 @@ void resetLedStripConfig(ledStripConfig_t *ledStripConfig)
 void resetServoConfig(servoConfig_t *servoConfig)
 {
     servoConfig->servoCenterPulse = 1500;
-    servoConfig->servoPwmRate = 50;
+    servoConfig->servoPwmRate = 300;
 
     int servoIndex = 0;
     for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT && servoIndex < MAX_SUPPORTED_SERVOS; i++) {
@@ -264,15 +264,15 @@ void resetServoConfig(servoConfig_t *servoConfig)
 
 void resetTriMixerConfig(triMixerConfig_t *triMixerConfig)
 {
-    triMixerConfig->tri_motor_acc_yaw_correction = 27;
+    triMixerConfig->tri_motor_acc_yaw_correction = 26;
     triMixerConfig->tri_motor_acceleration = 0.18f;
     triMixerConfig->tri_servo_feedback = DEFAULT_SERVO_FEEDBACK_SOURCE;
     triMixerConfig->tri_servo_max_adc = 0;
     triMixerConfig->tri_servo_mid_adc = 0;
     triMixerConfig->tri_servo_min_adc = 0;
-    triMixerConfig->tri_tail_motor_thrustfactor = 138;
+    triMixerConfig->tri_tail_motor_thrustfactor = 54; // Default for RCExplorer Baby tricopter
     triMixerConfig->tri_tail_servo_speed = 300; // Default for BMS-210DMH at 5V
-    triMixerConfig->tri_yaw_boost = 300;
+    triMixerConfig->tri_yaw_boost = 240;
     triMixerConfig->tri_dynamic_yaw_maxthrottle = 38;
 }
 #endif
@@ -653,8 +653,8 @@ void resetSerialConfig(serialConfig_t *serialConfig)
 
 void resetRcControlsConfig(rcControlsConfig_t *rcControlsConfig)
 {
-    rcControlsConfig->deadband = 0;
-    rcControlsConfig->yaw_deadband = 0;
+    rcControlsConfig->deadband = 9;
+    rcControlsConfig->yaw_deadband = 9;
     rcControlsConfig->alt_hold_deadband = 40;
     rcControlsConfig->alt_hold_fast_change = 1;
 }
@@ -664,7 +664,7 @@ void resetMixerConfig(mixerConfig_t *mixerConfig)
 #ifdef TARGET_DEFAULT_MIXER
     mixerConfig->mixerMode = TARGET_DEFAULT_MIXER;
 #else
-    mixerConfig->mixerMode = MIXER_QUADX;
+    mixerConfig->mixerMode = MIXER_TRI;
 #endif
     mixerConfig->yaw_motor_direction = 1;
 }
@@ -814,13 +814,13 @@ void createDefaultConfig(master_t *config)
     config->pidConfig.pid_process_denom = 1;
 #elif defined(USE_GYRO_SPI_MPU6000) || defined(USE_GYRO_SPI_MPU6500)  || defined(USE_GYRO_SPI_ICM20689)
     config->gyroConfig.gyro_sync_denom = 1;
-    config->pidConfig.pid_process_denom = 4;
+    config->pidConfig.pid_process_denom = 2;
 #else
     config->gyroConfig.gyro_sync_denom = 4;
     config->pidConfig.pid_process_denom = 2;
 #endif
     config->gyroConfig.gyro_soft_lpf_type = FILTER_PT1;
-    config->gyroConfig.gyro_soft_lpf_hz = 90;
+    config->gyroConfig.gyro_soft_lpf_hz = 100;
     config->gyroConfig.gyro_soft_notch_hz_1 = 400;
     config->gyroConfig.gyro_soft_notch_cutoff_1 = 300;
     config->gyroConfig.gyro_soft_notch_hz_2 = 200;

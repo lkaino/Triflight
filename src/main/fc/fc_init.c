@@ -498,9 +498,11 @@ void init(void)
         if (triMixerConfig()->tri_servo_feedback == TRI_SERVO_FB_CURRENT) {
             adcConfigMutable()->current.enabled = true;
         }
+#ifdef EXTERNAL1_ADC_PIN
         if (triMixerConfig()->tri_servo_feedback == TRI_SERVO_FB_EXT1) {
             adcConfigMutable()->external1.enabled = true;
         }
+#endif
     }
     adcInit(adcConfig());
 #endif

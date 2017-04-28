@@ -20,10 +20,12 @@
 #include "io_types.h"
 
 typedef enum {
-    ADC_BATTERY = 0,
-    ADC_CURRENT = 1,
-    ADC_EXTERNAL1 = 2,
-    ADC_RSSI = 3,
+    ADC_BATTERY   = 0,
+    ADC_CURRENT   = 1,
+    ADC_RSSI      = 2,
+#ifdef EXTERNAL1_ADC_PIN
+    ADC_EXTERNAL1 = 3,
+#endif
     ADC_CHANNEL_COUNT
 } AdcChannel;
 

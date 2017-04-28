@@ -377,9 +377,11 @@ void init(void)
             !feature(FEATURE_CURRENT_METER)) {
             adcConfig()->currentMeter.enabled = true;
         }
+#ifdef EXTERNAL1_ADC_PIN
         if (triMixerConfig()->tri_servo_feedback == TRI_SERVO_FB_EXT1) {
             adcConfig()->external1.enabled = true;
         }
+#endif
     }
     adcInit(adcConfig());
 #endif

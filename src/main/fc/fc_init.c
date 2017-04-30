@@ -548,6 +548,11 @@ void init(void)
     LED0_OFF;
     LED1_OFF;
 
+    if (triMixerInUse())
+    {
+        triInitFilters();
+    }
+
     imuInit();
 
     mspFcInit();

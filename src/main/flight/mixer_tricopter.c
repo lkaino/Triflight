@@ -775,10 +775,7 @@ static void tailMotorStep(int16_t setpoint, float dT)
     // 2  Hz -> 25 ms
     // 5  Hz -> 14 ms
     // 10 Hz -> 9  ms
-    debug[0] = setpoint;
-    debug[1] = current;
     tailMotor.virtualFeedBack = pt1FilterApply(&tailMotorFilter, current);
-    debug[2] = tailMotor.virtualFeedBack;
 }
 
 static int8_t triGetServoDirection(void)

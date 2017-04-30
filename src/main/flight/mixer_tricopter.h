@@ -59,6 +59,14 @@ uint16_t triGetCurrentServoAngle(void);
  */
 void triServoMixer(float scaledYawPid, float pidSumLimit);
 
+/** @brief Initialize filters for tricopter mixer
+ *
+ *  @note Looptime (dT) must be initialized before call to this function.
+ *
+ *  @return Void.
+ */
+void triInitFilters();
+
 /** @brief Get amount of motor correction that must be applied
  * for given motor.
  *

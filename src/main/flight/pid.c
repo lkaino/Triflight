@@ -252,7 +252,7 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
         const float errorRate = currentPidSetpoint - gyroRate + expectedGyroError[axis];       // r - y
 
         // -----calculate P component and add Dynamic Part based on stick input
-        axisPID_P[axis] = Kp[axis] * errorRate;
+        axisPID_P[axis] = Kp[axis] * (errorRate + expectedGyroError[axis]);
         if (axis == FD_YAW) {
             if (!tricopterServoMixerInUse) {
                 // Do not use TPA for yaw when tricopter servo mixer is in use,

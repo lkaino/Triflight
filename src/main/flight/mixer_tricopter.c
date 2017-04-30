@@ -703,9 +703,9 @@ static AdcChannel getServoFeedbackADCChannel(uint8_t tri_servo_feedback)
     case TRI_SERVO_FB_CURRENT:
         channel = ADC_CURRENT;
         break;
-#ifdef ADC_EXTERNAL
+#ifdef EXTERNAL1_ADC_PIN
     case TRI_SERVO_FB_EXT1:
-        channel = ADC_EXTERNAL;
+        channel = ADC_EXTERNAL1;
         break;
 #endif
     default:

@@ -474,7 +474,7 @@ bool isMixerUsingServos(void)
 void filterServos(void)
 {
     static int16_t servoIdx;
-    static bool servoFilterIsSet;
+    static bool servoFilterIsSet[MAX_SUPPORTED_SERVOS] = {false};
     static biquadFilter_t servoFilter[MAX_SUPPORTED_SERVOS];
 
 #if defined(MIXER_DEBUG)
@@ -483,9 +483,9 @@ void filterServos(void)
 
     if (servoMixerConfig->servo_lowpass_enable) {
         for (servoIdx = 0; servoIdx < MAX_SUPPORTED_SERVOS; servoIdx++) {
-            if (!servoFilterIsSet) {
+            if (!servoFilterIsSet[servoIdx]) {
                 biquadFilterInitLPF(&servoFilter[servoIdx], servoMixerConfig->servo_lowpass_freq, targetPidLooptime);
-                servoFilterIsSet = true;
+                servoFilterIsSet[servoIdx] = true;
             }
 
             servo[servoIdx] = lrintf(biquadFilterApply(&servoFilter[servoIdx], (float)servo[servoIdx]));

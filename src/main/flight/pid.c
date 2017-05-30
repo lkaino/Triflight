@@ -271,7 +271,8 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
         // b = 1 and only c (dtermSetpointWeight) can be tuned (amount derivative on measurement or error).
 
         // -----calculate error rate
-        const float errorRate = currentPidSetpoint - gyroRate + expectedGyroError[axis];       // r - y
+        const float errorRate = currentPidSetpoint - gyroRate;       // r - y
+        const float errorRateP = errorRate + expectedGyroError[axis];
 
         // -----calculate P component and add Dynamic Part based on stick input
         float PTerm;
@@ -279,16 +280,16 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
             if (tricopterServoMixerInUse) {
                 // Do not use TPA for yaw when tricopter servo mixer is in use,
                 // it will be handled in tricopter mixer.
-                PTerm = Kp[axis] * errorRate;
+                PTerm = Kp[axis] * errorRateP;
             }
             else {
-                PTerm = Kp[axis] * errorRate * tpaFactor;
+                PTerm = Kp[axis] * errorRateP * tpaFactor;
             }
             PTerm = ptermYawFilterApplyFn(ptermYawFilter, PTerm);
         }
         else
         {
-            PTerm = Kp[axis] * errorRate * tpaFactor;
+            PTerm = Kp[axis] * errorRateP * tpaFactor;
         }
 
         // -----calculate I component

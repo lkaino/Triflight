@@ -449,6 +449,11 @@ void init(void)
     pidInitFilters(&currentProfile->pidProfile);
     pidInitConfig(&currentProfile->pidProfile);
 
+    if (triMixerInUse())
+    {
+        triInitFilters();
+    }
+
     imuInit();
 
     mspFcInit();

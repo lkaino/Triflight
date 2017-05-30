@@ -64,6 +64,9 @@
 #define TRI_YAW_FORCE_CURVE_SIZE                (100)
 #define TRI_TAIL_SERVO_MAX_ANGLE                (500)
 #define TRI_SERVO_SATURATION_DPS_ERROR_LIMIT    (100.0f)
+#define TRI_SERVO_FEEDBACK_LPF_CUTOFF_HZ        (70)
+#define TRI_MOTOR_FEEDBACK_LPF_CUTOFF_HZ        (5)
+
 
 static const uint8_t TRI_TAIL_MOTOR_INDEX = 0;
 static const int32_t TRI_YAW_FORCE_PRECISION = 1000;
@@ -86,6 +89,8 @@ static float pitchCorrectionGain;
 static float dynamicYawGainAtMax;
 static triMixerConfig_t *gpTriMixerConfig;
 static int16_t lastMotorCorrection = 0;
+static pt1Filter_t tailMotorFilter;
+static pt1Filter_t servoFeedbackFilter;
 
 static void initYawForceCurve(void);
 static uint16_t getServoValueAtAngle(servoParam_t *servoConf, uint16_t angle);
@@ -129,6 +134,13 @@ void triInitMixer(servoParam_t *pTailServoConfig, int16_t *pTailServoOutput)
     tailMotor.acceleration = (float) throttleRange / gpTriMixerConfig->tri_motor_acceleration;
     initYawForceCurve();
     tailServo.ADCChannel = getServoFeedbackADCChannel(gpTriMixerConfig->tri_servo_feedback);
+}
+
+void triInitFilters()
+{
+    const float dT = getdT();
+    pt1FilterInit(&tailMotorFilter, TRI_MOTOR_FEEDBACK_LPF_CUTOFF_HZ, dT);
+    pt1FilterInit(&servoFeedbackFilter, TRI_SERVO_FEEDBACK_LPF_CUTOFF_HZ, dT);
 }
 
 static void initYawForceCurve(void)
@@ -685,9 +697,8 @@ static void updateServoAngle(float dT)
     if (gpTriMixerConfig->tri_servo_feedback == TRI_SERVO_FB_VIRTUAL) {
         tailServo.angle = virtualServoStep(tailServo.angle, tailServo.speed, dT, tailServo.pConf, *tailServo.pOutput);
     } else {
-        static pt1Filter_t feedbackFilter;
         // Read new servo feedback signal sample and run it through filter
-        const uint16_t ADCRaw = pt1FilterApply4(&feedbackFilter, adcGetChannel(tailServo.ADCChannel), 70, dT);
+        const uint16_t ADCRaw = pt1FilterApply(&servoFeedbackFilter, adcGetChannel(tailServo.ADCChannel));
         tailServo.angle = feedbackServoStep(gpTriMixerConfig, ADCRaw);
         tailServo.ADCRaw = ADCRaw;
     }
@@ -749,7 +760,6 @@ static float scalePIDBasedOnTailMotorSpeed(float scaledPidOutput, float pidSumLi
 static void tailMotorStep(int16_t setpoint, float dT)
 {
     static float current = 1000;
-    static pt1Filter_t motorFilter;
     const float dS = dT * tailMotor.acceleration; // Max change of an speed since last check
 
     if (ABS(current - setpoint) < dS) {
@@ -765,7 +775,7 @@ static void tailMotorStep(int16_t setpoint, float dT)
     // 2  Hz -> 25 ms
     // 5  Hz -> 14 ms
     // 10 Hz -> 9  ms
-    tailMotor.virtualFeedBack = pt1FilterApply4(&motorFilter, current, 5, dT);
+    tailMotor.virtualFeedBack = pt1FilterApply(&tailMotorFilter, current);
 }
 
 static int8_t triGetServoDirection(void)

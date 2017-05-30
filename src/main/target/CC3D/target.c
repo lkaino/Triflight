@@ -32,7 +32,7 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     { TIM4, IO_TAG(PB9), TIM_Channel_4, TIM_USE_MOTOR, 1, }, // S1_OUT
     { TIM4, IO_TAG(PB8), TIM_Channel_3, TIM_USE_MOTOR, 1, }, // S2_OUT
     { TIM4, IO_TAG(PB7), TIM_Channel_2, TIM_USE_MOTOR, 1, }, // S3_OUT
-    { TIM1, IO_TAG(PA8), TIM_Channel_1, TIM_USE_MOTOR, 1, }, // S4_OUT
+    { TIM1, IO_TAG(PA8), TIM_Channel_1, TIM_USE_MOTOR | TIM_USE_SERVO, 1, }, // S4_OUT
     { TIM3, IO_TAG(PB4), TIM_Channel_1, TIM_USE_MOTOR, 1, }, // S5_OUT - GPIO_PartialRemap_TIM3 - LED Strip
     { TIM2, IO_TAG(PA2), TIM_Channel_3, TIM_USE_MOTOR, 1, }  // S6_OUT
 };

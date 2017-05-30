@@ -19,7 +19,7 @@
 
 #include "common/utils.h"
 
-#define FC_FIRMWARE_NAME            "Triflight 0.7 Beta 1"
+#define FC_FIRMWARE_NAME            "Triflight 0.7 Beta 2"
 #define FC_VERSION_MAJOR            3  // increment when a major release is made (big new feature, etc)
 #define FC_VERSION_MINOR            1  // increment when a minor release is made (small new feature, change etc)
 #define FC_VERSION_PATCH_LEVEL      6  // increment when a bug is fixed

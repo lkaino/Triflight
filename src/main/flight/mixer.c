@@ -96,7 +96,9 @@ void pgResetFn_motorConfig(motorConfig_t *motorConfig)
 
     int motorIndex = 0;
     for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT && motorIndex < MAX_SUPPORTED_MOTORS; i++) {
-        if (timerHardware[i].usageFlags & TIM_USE_MOTOR) {
+        if ((timerHardware[i].usageFlags & TIM_USE_SERVO) && triMixerInUse()) {
+            // This channel is used for servo on tricopter
+        } else if (timerHardware[i].usageFlags & TIM_USE_MOTOR) {
             motorConfig->dev.ioTags[motorIndex] = timerHardware[i].tag;
             motorIndex++;
         }

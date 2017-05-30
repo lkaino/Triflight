@@ -436,7 +436,7 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
 
         // -----calculate error rate
         const float gyroRate = gyro.gyroADCf[axis]; // Process variable from gyro output in deg/sec
-        float errorRate = currentPidSetpoint - gyroRate + expectedGyroError[axis]; // r - y
+        float errorRate = currentPidSetpoint - gyroRate; // r - y
 
         if (inCrashRecoveryMode && cmpTimeUs(currentTimeUs, crashDetectedAtUs) > crashTimeDelayUs) {
             if (pidProfile->crash_recovery == PID_CRASH_RECOVERY_BEEP) {

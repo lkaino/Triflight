@@ -32,7 +32,7 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     DEF_TIM(TIM8,  CH2, PB8,  TIM_USE_MOTOR,                   1),  // PWM1 - PB8
     DEF_TIM(TIM8,  CH3, PB9,  TIM_USE_MOTOR,                   1),  // PWM2 - PB9
     DEF_TIM(TIM2,  CH4, PA3,  TIM_USE_MOTOR,                   1),  // PWM3 - PA3
-    DEF_TIM(TIM15, CH1, PA2,  TIM_USE_MOTOR,                   1),  // PWM4 - PA2
+    DEF_TIM(TIM15, CH1, PA2,  TIM_USE_MOTOR | TIM_USE_SERVO,   1),  // PWM4 - PA2
 
     // UART3 RX/TX
     //{ TIM2,  IO_TAG(PB10), TIM_Channel_3, TIM_USE_MOTOR, 1, GPIO_AF_1, NULL, 0 }, // PWM5  - PB10 - TIM2_CH3 / UART3_TX (AF7)

@@ -125,7 +125,7 @@ PG_REGISTER_WITH_RESET_FN(triMixerConfig_t, triMixerConfig, PG_TRICOPTER_CONFIG,
 
 void pgResetFn_triMixerConfig(triMixerConfig_t *triMixerConfig)
 {
-    triMixerConfig->tri_motor_acc_yaw_correction = 26;
+    triMixerConfig->tri_motor_acc_yaw_correction = 0;
     triMixerConfig->tri_motor_acceleration = 18;
     triMixerConfig->tri_servo_feedback = DEFAULT_SERVO_FEEDBACK_SOURCE;
     triMixerConfig->tri_servo_max_adc = 0;

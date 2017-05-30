@@ -249,7 +249,7 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
         // b = 1 and only c (dtermSetpointWeight) can be tuned (amount derivative on measurement or error).
 
         // -----calculate error rate
-        const float errorRate = currentPidSetpoint - gyroRate + expectedGyroError[axis];       // r - y
+        const float errorRate = currentPidSetpoint - gyroRate;       // r - y
 
         // -----calculate P component and add Dynamic Part based on stick input
         axisPID_P[axis] = Kp[axis] * (errorRate + expectedGyroError[axis]);

@@ -235,8 +235,11 @@ int16_t triGetMotorCorrection(uint8_t motorIndex)
         const uint16_t servoAngle = triGetCurrentServoAngle();
         correction = (throttleRange * getPitchCorrectionAtTailAngle(DEGREES_TO_RADIANS(servoAngle / 10.0f), tailServo.thrustFactor)) - throttleRange;
 
-        // Multiply the correction to get more authority
-        correction *= pitchCorrectionGain;
+        // Multiply the correction to get more authority (yaw boost)
+        if (isAirmodeActive())
+        {
+            correction *= pitchCorrectionGain;
+        }
         lastMotorCorrection = correction;
     }
 

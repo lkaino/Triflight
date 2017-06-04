@@ -150,9 +150,9 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->P8[PITCH] = 39;
     pidProfile->I8[PITCH] = 50;
     pidProfile->D8[PITCH] = 20;
-    pidProfile->P8[YAW] = 107;
+    pidProfile->P8[YAW] = 84;
     pidProfile->I8[YAW] = 40;
-    pidProfile->D8[YAW] = 105;
+    pidProfile->D8[YAW] = 50;
     pidProfile->P8[PIDALT] = 50;
     pidProfile->I8[PIDALT] = 0;
     pidProfile->D8[PIDALT] = 0;
@@ -264,7 +264,7 @@ void resetServoConfig(servoConfig_t *servoConfig)
 
 void resetTriMixerConfig(triMixerConfig_t *triMixerConfig)
 {
-    triMixerConfig->tri_motor_acc_yaw_correction = 0;
+    triMixerConfig->tri_motor_acc_yaw_correction = 20;
     triMixerConfig->tri_motor_acceleration = 0.18f;
     triMixerConfig->tri_servo_feedback = DEFAULT_SERVO_FEEDBACK_SOURCE;
     triMixerConfig->tri_servo_max_adc = 0;

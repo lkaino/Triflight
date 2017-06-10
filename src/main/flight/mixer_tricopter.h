@@ -164,22 +164,24 @@ typedef struct thrustTorque_s {
 } thrustTorque_t;
 
 typedef struct tailServo_s {
-    int32_t maxYawForce;
+    float maxYawOutput;
     float thrustFactor;
     servoParam_t *pConf; //!< Pointer to the tail servo configuration
     int16_t *pOutput; //!< Pointer to the servo output (setpoint) that controls the PWM output
     AdcChannel ADCChannel;
     int16_t maxDeflection;
     int16_t speed;
+    int16_t pitchZeroAngle;
     uint16_t angleAtMin;
     uint16_t angleAtMax;
+    uint16_t angleAtLinearMin;
+    uint16_t angleAtLinearMax;
     uint16_t angle; //!< Current measured angle
     uint16_t ADCRaw;
     _Bool saturated;
 } tailServo_t;
 
 typedef struct tailMotor_s {
-    int16_t pitchZeroAngle;
     int16_t accelerationDelay_ms;
     int16_t decelerationDelay_ms;
     int16_t accelerationDelay_angle;

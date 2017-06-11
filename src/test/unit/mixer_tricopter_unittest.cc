@@ -19,6 +19,7 @@
 #include <stdbool.h>
 
 #include <limits.h>
+#include <math.h>
 
 extern "C" {
 #include "build/debug.h"
@@ -52,8 +53,10 @@ int16_t motor[MAX_SUPPORTED_MOTORS];
 
 void tailTuneModeThrustTorque(thrustTorque_t *pTT, const bool isThrottleHigh);
 uint16_t getLinearServoValue(servoParam_t *servoConf, float scaledPIDOutput, float pidSumLimit);
-uint16_t getAngleForYawOutput(float yawOutput);
-uint16_t binarySearchOutput(float yawOutput, float gain);
+float getAngleForYawOutput(float yawOutput);
+float binarySearchOutput(float yawOutput, float gain);
+uint16_t getServoValueAtAngle(servoParam_t *servoConf, float angle);
+float getServoAngle(servoParam_t *servoConf, uint16_t servoValue);
 }
 extern tailServo_t tailServo;
 extern tailMotor_t tailMotor;
@@ -177,24 +180,29 @@ protected:
         tailTune.tt.state = TT_WAIT_FOR_DISARM;
         tailTune.tt.servoAvgAngle.numOf = 300;
     }
+
+    virtual float getYaw0Angle(float thrustFactor) {
+        float angle = 0;
+        float smallestOutput = 100000;
+        for (angle = 40; angle < 180.0; angle += 0.01) {
+            float angleRad = DEGREES_TO_RADIANS(angle);
+            float output = (-thrustFactor * cos(angleRad) - sin(angleRad));
+            if (fabsf(output) < smallestOutput) {
+                smallestOutput = fabsf(output);
+            } else {
+                break;
+            }
+        }
+
+        return angle;
+    }
 };
-
-TEST_F(LinearOutputTest, binarySearch_min) {
-    tailMotor.virtualFeedBack = motorConfig()->minthrottle + 0;
-    float output = -tailServo.maxYawOutput * 1;
-    EXPECT_NEAR(tailServo.angleAtLinearMin, getAngleForYawOutput(output), 5);
-}
-
-TEST_F(LinearOutputTest, binarySearch_max) {
-    tailMotor.virtualFeedBack = motorConfig()->minthrottle + 0;
-    float output = tailServo.maxYawOutput * 1;
-    EXPECT_NEAR(tailServo.angleAtLinearMax, getAngleForYawOutput(output), 5);
-}
 
 TEST_F(LinearOutputTest, motor0_output0Percent) {
     tailMotor.virtualFeedBack = motorConfig()->minthrottle + 0;
     float output = 0;
-    EXPECT_NEAR(1004, getAngleForYawOutput(output), 5);
+    float angle = this->getYaw0Angle(triMixerConfig()->tri_tail_motor_thrustfactor / 10.0);
+    EXPECT_NEAR(angle, getAngleForYawOutput(output), 0.05);
 }
 
 TEST_F(LinearOutputTest, motor0_output50Percent) {
@@ -203,11 +211,94 @@ TEST_F(LinearOutputTest, motor0_output50Percent) {
     EXPECT_NEAR(tailServo.angleAtLinearMax, getAngleForYawOutput(output), 1);
 }
 
-TEST_F(LinearOutputTest, motor0_output_neg1) {
-    tailMotor.virtualFeedBack = motorConfig()->minthrottle + 1000;
-    float output = tailServo.maxYawOutput * 1;
+TEST_F(LinearOutputTest, motor0_outputNeg100Percent) {
+    tailMotor.virtualFeedBack = motorConfig()->minthrottle + 0;
+    float output = -tailServo.maxYawOutput * 1;
     EXPECT_NEAR(tailServo.angleAtLinearMin, getAngleForYawOutput(output), 1);
 }
+
+TEST_F(LinearOutputTest, motor0_outputNeg50Percent) {
+    tailMotor.virtualFeedBack = motorConfig()->minthrottle + 0;
+    float output = -tailServo.maxYawOutput * 0.5;
+    EXPECT_NEAR(tailServo.angleAtLinearMin, getAngleForYawOutput(output), 1);
+}
+
+TEST_F(LinearOutputTest, motor40_output50Percent) {
+    tailMotor.virtualFeedBack = motorConfig()->minthrottle + 400;
+    float output = tailServo.maxYawOutput * 0.5;
+    EXPECT_NEAR(111.5, getAngleForYawOutput(output), 1);
+}
+
+TEST_F(LinearOutputTest, getServoValueAtAngle_min) {
+    uint16_t angle = tailServo.angleAtMin;
+    EXPECT_EQ(servoConf.min, getServoValueAtAngle(&servoConf, angle));
+}
+
+TEST_F(LinearOutputTest, getServoValueAtAngle_mid) {
+    uint16_t angle = TRI_TAIL_SERVO_ANGLE_MID;
+    EXPECT_EQ(servoConf.middle, getServoValueAtAngle(&servoConf, angle));
+}
+
+TEST_F(LinearOutputTest, getServoValueAtAngle_max) {
+    float angle = tailServo.angleAtMax;
+    EXPECT_EQ(servoConf.max, getServoValueAtAngle(&servoConf, angle));
+}
+
+TEST_F(LinearOutputTest, getServoValueAtAngle_1percent) {
+    float angle = TRI_TAIL_SERVO_ANGLE_MID + (tailServo.angleAtMax - TRI_TAIL_SERVO_ANGLE_MID) * 0.01;
+    EXPECT_EQ(servoConf.middle + (servoConf.max - servoConf.middle) * 0.01, getServoValueAtAngle(&servoConf, angle));
+}
+
+TEST_F(LinearOutputTest, getServoValueAtAngle_neg1percent) {
+    float angle = TRI_TAIL_SERVO_ANGLE_MID - (TRI_TAIL_SERVO_ANGLE_MID - tailServo.angleAtMin) * 0.01;
+    EXPECT_NEAR(servoConf.middle - (servoConf.middle - servoConf.min) * 0.01, getServoValueAtAngle(&servoConf, angle), 1);
+}
+
+TEST_F(LinearOutputTest, getServoValueAtAngle_50percent) {
+    float angle = TRI_TAIL_SERVO_ANGLE_MID + (tailServo.angleAtMax - TRI_TAIL_SERVO_ANGLE_MID) * 0.5;
+    EXPECT_EQ(servoConf.middle + (servoConf.max - servoConf.middle) * 0.5, getServoValueAtAngle(&servoConf, angle));
+}
+
+TEST_F(LinearOutputTest, getServoValueAtAngle_neg50percent) {
+    float angle = TRI_TAIL_SERVO_ANGLE_MID - (TRI_TAIL_SERVO_ANGLE_MID - tailServo.angleAtMin) * 0.5;
+    EXPECT_NEAR(servoConf.middle - (servoConf.middle - servoConf.min) * 0.5, getServoValueAtAngle(&servoConf, angle), 1);
+}
+
+TEST_F(LinearOutputTest, getServoValueAtAngle_110percent) {
+    float angle = TRI_TAIL_SERVO_ANGLE_MID + (tailServo.angleAtMax - TRI_TAIL_SERVO_ANGLE_MID) * 1.1;
+    EXPECT_EQ(servoConf.middle + (servoConf.max - servoConf.middle) * 1.1, getServoValueAtAngle(&servoConf, angle));
+}
+
+TEST_F(LinearOutputTest, getServoValueAtAngle_neg110percent) {
+    float angle = TRI_TAIL_SERVO_ANGLE_MID - (TRI_TAIL_SERVO_ANGLE_MID - tailServo.angleAtMin) * 1.1;
+    EXPECT_NEAR(servoConf.middle - (servoConf.middle - servoConf.min) * 1.1, getServoValueAtAngle(&servoConf, angle), 1);
+}
+
+TEST_F(LinearOutputTest, getServoAngle_min) {
+    uint16_t servoValue = servoConf.min;
+    EXPECT_NEAR(tailServo.angleAtMin, getServoAngle(&servoConf, servoValue), 1);
+}
+
+TEST_F(LinearOutputTest, getServoAngle_max) {
+    uint16_t servoValue = servoConf.max;
+    EXPECT_NEAR(tailServo.angleAtMax, getServoAngle(&servoConf, servoValue), 1);
+}
+
+TEST_F(LinearOutputTest, getServoAngle_mid) {
+    uint16_t servoValue = servoConf.middle;
+    EXPECT_NEAR(TRI_TAIL_SERVO_ANGLE_MID, getServoAngle(&servoConf, servoValue), 1);
+}
+
+TEST_F(LinearOutputTest, getServoAngle_50percent) {
+    uint16_t servoValue = servoConf.middle + (servoConf.max - servoConf.middle) * 0.5;
+    EXPECT_NEAR(TRI_TAIL_SERVO_ANGLE_MID + (tailServo.angleAtMax - TRI_TAIL_SERVO_ANGLE_MID) * 0.5, getServoAngle(&servoConf, servoValue), 1);
+}
+
+TEST_F(LinearOutputTest, getServoAngle_neg50percent) {
+    uint16_t servoValue = servoConf.middle - (servoConf.middle - servoConf.min) * 0.5;
+    EXPECT_NEAR(TRI_TAIL_SERVO_ANGLE_MID - (TRI_TAIL_SERVO_ANGLE_MID - tailServo.angleAtMin) * 0.5, getServoAngle(&servoConf, servoValue), 1);
+}
+
 
 //STUBS
 extern "C" {

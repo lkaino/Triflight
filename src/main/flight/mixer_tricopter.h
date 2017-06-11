@@ -48,7 +48,7 @@ void triInitMixer(servoParam_t *pTailServoConfig, int16_t *pTailServo);
  *
  *  @return Servo angle in decidegrees.
  */
-uint16_t triGetCurrentServoAngle(void);
+float triGetCurrentServoAngle(void);
 
 /** @brief Perform tricopter mixer actions.
  *
@@ -116,6 +116,14 @@ PG_DECLARE(triMixerConfig_t, triMixerConfig);
 
 #ifdef MIXER_TRICOPTER_INTERNALS
 
+#define USE_AUX_CHANNEL_TUNING                  (0)
+#define TRI_TAIL_SERVO_ANGLE_MID                (90.0f)
+#define TRI_YAW_FORCE_CURVE_SIZE                (100)
+#define TRI_TAIL_SERVO_MAX_ANGLE                (50.0f)
+#define TRI_SERVO_SATURATION_DPS_ERROR_LIMIT    (100.0f)
+#define TRI_SERVO_FEEDBACK_LPF_CUTOFF_HZ        (70)
+#define TRI_MOTOR_FEEDBACK_LPF_CUTOFF_HZ        (5)
+
 #include "drivers/adc.h"
 
 typedef enum {
@@ -172,14 +180,14 @@ typedef struct tailServo_s {
     servoParam_t *pConf; //!< Pointer to the tail servo configuration
     int16_t *pOutput; //!< Pointer to the servo output (setpoint) that controls the PWM output
     AdcChannel ADCChannel;
-    int16_t maxDeflection;
+    float maxDeflection;
     int16_t speed;
-    int16_t pitchZeroAngle;
-    uint16_t angleAtMin;
-    uint16_t angleAtMax;
-    uint16_t angleAtLinearMin;
-    uint16_t angleAtLinearMax;
-    uint16_t angle; //!< Current measured angle
+    float pitchZeroAngle;
+    float angleAtMin;
+    float angleAtMax;
+    float angleAtLinearMin;
+    float angleAtLinearMax;
+    float angle; //!< Current measured angle
     uint16_t ADCRaw;
     _Bool saturated;
 } tailServo_t;

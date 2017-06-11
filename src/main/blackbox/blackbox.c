@@ -1025,7 +1025,7 @@ static void loadMainState(timeUs_t currentTimeUs)
 
 #ifdef USE_SERVOS
     //Tail servo for tricopters
-    blackboxCurrent->servo[5] = triGetCurrentServoAngle();
+    blackboxCurrent->servo[5] = triGetCurrentServoAngle() * 10;
 #endif
 #else
     UNUSED(currentTimeUs);

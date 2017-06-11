@@ -152,7 +152,7 @@ The ready beeping should continue every 2 seconds.
 The values are now automatically saved, if you disarm first, wait a few seconds and then deactivate the tail tune. **Do not** use stick command.
 
 Use the configurator CLI and check *tri_tail_motor_thrustfactor*.
-If it's still 138 (default) it's likely the tuning failed.
+If it's still 54 (default) it's likely the tuning failed.
 
 ## PID Settings and more
 

@@ -45,7 +45,7 @@
 #define MPU_INT_EXTI                PC13
 #define USE_EXTI
 
-#define USE_ESC_SENSOR
+//#define USE_ESC_SENSOR  //removed on Triflight
 #define REMAP_TIM16_DMA
 #define REMAP_TIM17_DMA
 

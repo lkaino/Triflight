@@ -198,32 +198,39 @@ protected:
     }
 };
 
-TEST_F(LinearOutputTest, motor0_output0Percent) {
-    tailMotor.virtualFeedBack = motorConfig()->minthrottle + 0;
+TEST_F(LinearOutputTest, getAngleForYawOutput_motor0_output0Percent) {
+    tailMotor.virtualFeedBack = motorConfig()->minthrottle + 50;
     float output = 0;
     float angle = this->getYaw0Angle(triMixerConfig()->tri_tail_motor_thrustfactor / 10.0);
     EXPECT_NEAR(angle, getAngleForYawOutput(output), 0.05);
+    EXPECT_NEAR(71, tailServo.angleAtLinearMin, 0.05);
 }
 
-TEST_F(LinearOutputTest, motor0_output50Percent) {
+TEST_F(LinearOutputTest, getAngleForYawOutput_motor0_output50Percent) {
     tailMotor.virtualFeedBack = motorConfig()->minthrottle + 0;
     float output = tailServo.maxYawOutput * 0.5;
-    EXPECT_NEAR(tailServo.angleAtLinearMax, getAngleForYawOutput(output), 1);
+    EXPECT_NEAR(122.8, getAngleForYawOutput(output), 1);
 }
 
-TEST_F(LinearOutputTest, motor0_outputNeg100Percent) {
+TEST_F(LinearOutputTest, getAngleForYawOutput_motor0_output100Percent) {
+    tailMotor.virtualFeedBack = motorConfig()->minthrottle + 0;
+    float output = tailServo.maxYawOutput * 1;
+    EXPECT_NEAR(tailServo.angleAtLinearMax, getAngleForYawOutput(output), 2);
+}
+
+TEST_F(LinearOutputTest, getAngleForYawOutput_motor0_outputNeg100Percent) {
     tailMotor.virtualFeedBack = motorConfig()->minthrottle + 0;
     float output = -tailServo.maxYawOutput * 1;
-    EXPECT_NEAR(tailServo.angleAtLinearMin, getAngleForYawOutput(output), 1);
+    EXPECT_NEAR(tailServo.angleAtLinearMin, getAngleForYawOutput(output), 2);
 }
 
-TEST_F(LinearOutputTest, motor0_outputNeg50Percent) {
+TEST_F(LinearOutputTest, getAngleForYawOutput_motor0_outputNeg50Percent) {
     tailMotor.virtualFeedBack = motorConfig()->minthrottle + 0;
     float output = -tailServo.maxYawOutput * 0.5;
-    EXPECT_NEAR(tailServo.angleAtLinearMin, getAngleForYawOutput(output), 1);
+    EXPECT_NEAR(78.1, getAngleForYawOutput(output), 1);
 }
 
-TEST_F(LinearOutputTest, motor40_output50Percent) {
+TEST_F(LinearOutputTest, getAngleForYawOutput_motor40_output50Percent) {
     tailMotor.virtualFeedBack = motorConfig()->minthrottle + 400;
     float output = tailServo.maxYawOutput * 0.5;
     EXPECT_NEAR(111.5, getAngleForYawOutput(output), 1);
@@ -317,6 +324,7 @@ master_t masterConfig;
 int32_t gyroADC[XYZ_AXIS_COUNT];
 //master_t masterConfig;
 bool airModeActive = true;
+uint8_t debugMode = DEBUG_TRI;
 
 uint32_t millis(void) {
     return 0;

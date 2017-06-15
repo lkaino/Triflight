@@ -117,6 +117,7 @@ typedef struct triMixerConfig_s{
 #define TRI_TAIL_SERVO_ANGLE_MID                (90.0f)
 #define TRI_YAW_FORCE_CURVE_SIZE                (100)
 #define TRI_TAIL_SERVO_MAX_ANGLE                (50.0f)
+#define TRI_CURVE_FIRST_INDEX_ANGLE             (TRI_TAIL_SERVO_ANGLE_MID - TRI_TAIL_SERVO_MAX_ANGLE)
 #define TRI_SERVO_SATURATION_DPS_ERROR_LIMIT    (100.0f)
 #define TRI_SERVO_FEEDBACK_LPF_CUTOFF_HZ        (70)
 #define TRI_MOTOR_FEEDBACK_LPF_CUTOFF_HZ        (5)
@@ -172,6 +173,7 @@ typedef struct thrustTorque_s {
 } thrustTorque_t;
 
 typedef struct tailServo_s {
+    pt1Filter_t feedbackFilter;
     float maxYawOutput;
     float thrustFactor;
     servoParam_t *pConf; //!< Pointer to the tail servo configuration
@@ -186,16 +188,16 @@ typedef struct tailServo_s {
     float angleAtLinearMax;
     float angle; //!< Current measured angle
     uint16_t ADCRaw;
-    _Bool saturated;
 } tailServo_t;
 
 typedef struct tailMotor_s {
-    int16_t accelerationDelay_ms;
-    int16_t decelerationDelay_ms;
-    int16_t accelerationDelay_angle;
-    int16_t decelerationDelay_angle;
+    pt1Filter_t feedbackFilter;
     float virtualFeedBack;
     float acceleration; //!< Motor acceleration in output units (us) / second
+    float pitchCorrectionGain; //!< Gain added to the calculated tail motor pitch correction to gain more yaw output
+    int16_t lastCorrection;
+    uint16_t linearMinOutput; //!< Minimum motor output for linear calculation.
+    int16_t outputRange;
 } tailMotor_t;
 
 typedef struct tailTune_s {

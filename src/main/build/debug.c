@@ -44,6 +44,7 @@ const char * const debugModeNames[DEBUG_COUNT] = {
     "ESC_SENSOR",
     "SCHEDULER",
     "STACK",
+    "TRI",
     "ESC_SENSOR_RPM",
     "ESC_SENSOR_TMP",
     "ALTITUDE",

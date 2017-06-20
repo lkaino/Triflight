@@ -187,7 +187,7 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->levelSensitivity = 55;
     pidProfile->setpointRelaxRatio = 100;
     pidProfile->dtermSetpointWeight = 100;
-    pidProfile->yawRateAccelLimit = 10.0f;
+    pidProfile->yawRateAccelLimit = 50.0f;
     pidProfile->rateAccelLimit = 0.0f;
     pidProfile->itermThrottleThreshold = 350;
     pidProfile->itermAcceleratorGain = 3.0f;

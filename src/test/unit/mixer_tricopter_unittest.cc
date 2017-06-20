@@ -236,6 +236,15 @@ TEST_F(LinearOutputTest, getAngleForYawOutput_motor40_output50Percent) {
     EXPECT_NEAR(111.5, getAngleForYawOutput(output), 1);
 }
 
+TEST_F(LinearOutputTest, getAngleForYawOutput_accuracy) {
+    tailMotor.virtualFeedBack = motorConfig()->minthrottle + 500;
+    float output = tailServo.maxYawOutput * 0.5;
+    const float angle = getAngleForYawOutput(output);
+    output *= 1.001;
+    const float secondAngle = getAngleForYawOutput(output);
+    EXPECT_NEAR(0.01, fabsf(secondAngle - angle), 0.005);
+}
+
 TEST_F(LinearOutputTest, getServoValueAtAngle_min) {
     uint16_t angle = tailServo.angleAtMin;
     EXPECT_EQ(servoConf.min, getServoValueAtAngle(&servoConf, angle));
@@ -281,6 +290,15 @@ TEST_F(LinearOutputTest, getServoValueAtAngle_neg110percent) {
     EXPECT_NEAR(servoConf.middle - (servoConf.middle - servoConf.min) * 1.1, getServoValueAtAngle(&servoConf, angle), 1);
 }
 
+TEST_F(LinearOutputTest, getServoValueAtAngle_resolution) {
+    float angle = TRI_TAIL_SERVO_ANGLE_MID;
+    int16_t value = getServoValueAtAngle(&servoConf, angle);
+    angle += 0.1f;
+    EXPECT_NE(value, getServoValueAtAngle(&servoConf, angle));
+    angle -= 0.2f;
+    EXPECT_NE(value, getServoValueAtAngle(&servoConf, angle));
+}
+
 TEST_F(LinearOutputTest, getServoAngle_min) {
     uint16_t servoValue = servoConf.min;
     EXPECT_NEAR(tailServo.angleAtMin, getServoAngle(&servoConf, servoValue), 1);
@@ -304,6 +322,16 @@ TEST_F(LinearOutputTest, getServoAngle_50percent) {
 TEST_F(LinearOutputTest, getServoAngle_neg50percent) {
     uint16_t servoValue = servoConf.middle - (servoConf.middle - servoConf.min) * 0.5;
     EXPECT_NEAR(TRI_TAIL_SERVO_ANGLE_MID - (TRI_TAIL_SERVO_ANGLE_MID - tailServo.angleAtMin) * 0.5, getServoAngle(&servoConf, servoValue), 1);
+}
+
+TEST_F(LinearOutputTest, getLinearServoValue_accuracy) {
+    float pidOutput = 500;
+    const float pidLimit = 1000;
+    tailMotor.virtualFeedBack = 1500;
+    const uint16_t servoValue = getLinearServoValue(&servoConf, pidOutput, pidLimit);
+    pidOutput += 1.0f;
+    const uint16_t newServoValue = getLinearServoValue(&servoConf, pidOutput, pidLimit);
+    EXPECT_EQ(1, newServoValue - servoValue);
 }
 
 

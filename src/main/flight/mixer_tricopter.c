@@ -187,7 +187,7 @@ STATIC_UNIT_TESTED uint16_t getLinearServoValue(servoParam_t *servoConf, float s
 {
     // maxYawOutput is the maximum output we can get at zero motor output with the pitch correction
     const float yawOutput = tailServo.maxYawOutput * scaledPIDOutput / pidSumLimit;
-    const int16_t correctedAngle = getAngleForYawOutput(yawOutput);
+    const float correctedAngle = getAngleForYawOutput(yawOutput);
     const uint16_t linearServoValue = getServoValueAtAngle(servoConf, correctedAngle);
 
     DEBUG_SET(DEBUG_TRI, DEBUG_TRI_SERVO_OUTPUT_ANGLE_OR_TAIL_TUNE_STATE, correctedAngle * 10);

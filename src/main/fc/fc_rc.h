@@ -24,4 +24,4 @@ float getThrottlePIDAttenuation(void);
 void updateRcCommands(void);
 void resetYawAxis(void);
 void generateThrottleCurve(void);
-bool isRcAxisWithinDeadband(int32_t axis);
+bool isRcAxisWithinDeadband(int32_t axis, uint8_t minDeadband);

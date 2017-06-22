@@ -50,6 +50,9 @@ tailTune_t tailTune;
 int16_t servo[MAX_SUPPORTED_SERVOS];
 controlRateConfig_t *currentControlRateProfile;
 int16_t motor[MAX_SUPPORTED_MOTORS];
+int16_t test_motorLow;
+int16_t test_motorHigh;
+int16_t test_motorRange;
 
 void tailTuneModeThrustTorque(thrustTorque_t *pTT, const bool isThrottleHigh);
 uint16_t getLinearServoValue(servoParam_t *servoConf, float scaledPIDOutput, float pidSumLimit);
@@ -157,6 +160,10 @@ TEST_F(ThrustFactorCalculationTest, err130) {
 class LinearOutputTest: public ::testing::Test {
 protected:
     virtual void SetUp() {
+
+        test_motorLow = 40;
+        test_motorHigh = 2000;
+        test_motorRange = test_motorHigh - test_motorLow;
         memset(&servoConf, 0, sizeof(servoConf));
         servoConf.min = DEFAULT_SERVO_MIN;
         servoConf.max = DEFAULT_SERVO_MAX;
@@ -164,9 +171,6 @@ protected:
         servoConf.rate = 100;
         servoConf.forwardFromChannel = CHANNEL_FORWARDING_DISABLED;
         servoConf.angleAtMax = 40;
-
-        motorConfig()->maxthrottle = 2000;
-        motorConfig()->minthrottle = 1000;
 
         // give all servos a default command
         for (uint8_t i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
@@ -199,7 +203,7 @@ protected:
 };
 
 TEST_F(LinearOutputTest, getAngleForYawOutput_motor0_output0Percent) {
-    tailMotor.virtualFeedBack = motorConfig()->minthrottle + 50;
+    tailMotor.virtualFeedBack = test_motorRange * 0.025;
     float output = 0;
     float angle = this->getYaw0Angle(triMixerConfig()->tri_tail_motor_thrustfactor / 10.0);
     EXPECT_NEAR(angle, getAngleForYawOutput(output), 0.05);
@@ -207,37 +211,37 @@ TEST_F(LinearOutputTest, getAngleForYawOutput_motor0_output0Percent) {
 }
 
 TEST_F(LinearOutputTest, getAngleForYawOutput_motor0_output50Percent) {
-    tailMotor.virtualFeedBack = motorConfig()->minthrottle + 0;
+    tailMotor.virtualFeedBack = test_motorRange * 0;
     float output = tailServo.maxYawOutput * 0.5;
     EXPECT_NEAR(122.8, getAngleForYawOutput(output), 1);
 }
 
 TEST_F(LinearOutputTest, getAngleForYawOutput_motor0_output100Percent) {
-    tailMotor.virtualFeedBack = motorConfig()->minthrottle + 0;
+    tailMotor.virtualFeedBack = test_motorRange * 0;
     float output = tailServo.maxYawOutput * 1;
     EXPECT_NEAR(tailServo.angleAtLinearMax, getAngleForYawOutput(output), 2);
 }
 
 TEST_F(LinearOutputTest, getAngleForYawOutput_motor0_outputNeg100Percent) {
-    tailMotor.virtualFeedBack = motorConfig()->minthrottle + 0;
+    tailMotor.virtualFeedBack = test_motorRange * 0;
     float output = -tailServo.maxYawOutput * 1;
     EXPECT_NEAR(tailServo.angleAtLinearMin, getAngleForYawOutput(output), 2);
 }
 
 TEST_F(LinearOutputTest, getAngleForYawOutput_motor0_outputNeg50Percent) {
-    tailMotor.virtualFeedBack = motorConfig()->minthrottle + 0;
+    tailMotor.virtualFeedBack = test_motorRange * 0;
     float output = -tailServo.maxYawOutput * 0.5;
     EXPECT_NEAR(78.1, getAngleForYawOutput(output), 1);
 }
 
 TEST_F(LinearOutputTest, getAngleForYawOutput_motor40_output50Percent) {
-    tailMotor.virtualFeedBack = motorConfig()->minthrottle + 400;
+    tailMotor.virtualFeedBack = test_motorRange * 0.4;
     float output = tailServo.maxYawOutput * 0.5;
-    EXPECT_NEAR(111.5, getAngleForYawOutput(output), 1);
+    EXPECT_NEAR(112.6, getAngleForYawOutput(output), 1);
 }
 
 TEST_F(LinearOutputTest, getAngleForYawOutput_accuracy) {
-    tailMotor.virtualFeedBack = motorConfig()->minthrottle + 500;
+    tailMotor.virtualFeedBack = test_motorRange * 0.5;
     float output = tailServo.maxYawOutput * 0.5;
     const float angle = getAngleForYawOutput(output);
     output *= 1.001;
@@ -441,6 +445,16 @@ int servoDirection(int servoIndex, int inputSource)
     UNUSED(servoIndex);
     UNUSED(inputSource);
     return 1;
+}
+
+uint16_t mixGetMotorOutputLow()
+{
+    return test_motorLow;
+}
+
+uint16_t mixGetMotorOutputHigh()
+{
+    return test_motorHigh;
 }
 
 }

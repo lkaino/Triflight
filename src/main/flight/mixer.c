@@ -809,3 +809,13 @@ float mixGetScaledAxisPidf(int axis)
 {
     return scaledAxisPIDf[axis];
 }
+
+uint16_t mixGetMotorOutputLow()
+{
+    return motorOutputLow;
+}
+
+uint16_t mixGetMotorOutputHigh()
+{
+    return motorOutputHigh;
+}

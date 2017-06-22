@@ -130,3 +130,5 @@ void stopPwmAllMotors(void);
 float convertExternalToMotor(uint16_t externalValue);
 uint16_t convertMotorToExternal(float motorValue);
 float mixGetScaledAxisPidf(int axis);
+uint16_t mixGetMotorOutputLow();
+uint16_t mixGetMotorOutputHigh();

@@ -143,7 +143,8 @@ void triInitMixer(servoParam_t *pTailServoConfig, int16_t *pTailServoOutput)
     tailServo.speed = gpTriMixerConfig->tri_tail_servo_speed;
     tailServo.ADCChannel = getServoFeedbackADCChannel(gpTriMixerConfig->tri_servo_feedback);
 
-    tailMotor.outputRange = motorConfig()->maxthrottle - motorConfig()->minthrottle;
+    tailMotor.outputRange = mixGetMotorOutputHigh() - mixGetMotorOutputLow();
+    tailMotor.minOutput = mixGetMotorOutputLow();
     tailMotor.linearMinOutput = tailMotor.outputRange * 0.05;
     tailMotor.pitchCorrectionGain = gpTriMixerConfig->tri_yaw_boost / 100.0f;
 
@@ -376,7 +377,7 @@ STATIC_UNIT_TESTED float getAngleForYawOutput(float yawOutput)
 {
     float angle;
 
-    float motorWoPitchCorr = tailMotor.virtualFeedBack - motorConfig()->minthrottle - tailMotor.lastCorrection;
+    float motorWoPitchCorr = tailMotor.virtualFeedBack - tailMotor.linearMinOutput - tailMotor.lastCorrection;
     motorWoPitchCorr = MAX(tailMotor.linearMinOutput, motorWoPitchCorr);
     if (yawOutput < ((motorWoPitchCorr + motorPitchCorrectionCurve[0]) * yawOutputGainCurve[0])) {
         // No force that low
@@ -517,8 +518,10 @@ STATIC_UNIT_TESTED void tailTuneModeThrustTorque(thrustTorque_t *pTT, const bool
         }
         break;
     case TT_ACTIVE:
-        if (!(isThrottleHigh && isRcAxisWithinDeadband(ROLL) && isRcAxisWithinDeadband(PITCH)
-                && isRcAxisWithinDeadband(YAW))) {
+        if (!(isThrottleHigh
+                && isRcAxisWithinDeadband(ROLL, TRI_TAIL_TUNE_MIN_DEADBAND)
+                && isRcAxisWithinDeadband(PITCH, TRI_TAIL_TUNE_MIN_DEADBAND)
+                && isRcAxisWithinDeadband(YAW, TRI_TAIL_TUNE_MIN_DEADBAND))) {
             pTT->timestamp_ms = GetCurrentTime_ms(); // sticks are NOT good
             DEBUG_SET(DEBUG_TRI, DEBUG_TRI_SERVO_OUTPUT_ANGLE_OR_TAIL_TUNE_STATE, 1100);
         }
@@ -526,10 +529,10 @@ STATIC_UNIT_TESTED void tailTuneModeThrustTorque(thrustTorque_t *pTT, const bool
             pTT->timestamp2_ms = GetCurrentTime_ms(); // gyro is NOT stable
             DEBUG_SET(DEBUG_TRI, DEBUG_TRI_SERVO_OUTPUT_ANGLE_OR_TAIL_TUNE_STATE, 1200);
         }
-        if (IsDelayElapsed_ms(pTT->timestamp_ms, 250)) {
+        if (IsDelayElapsed_ms(pTT->timestamp_ms, 200)) {
             DEBUG_SET(DEBUG_TRI, DEBUG_TRI_SERVO_OUTPUT_ANGLE_OR_TAIL_TUNE_STATE, 1300);
             // RC commands have been within deadbands for 250 ms
-            if (IsDelayElapsed_ms(pTT->timestamp2_ms, 250)) {
+            if (IsDelayElapsed_ms(pTT->timestamp2_ms, 200)) {
                 DEBUG_SET(DEBUG_TRI, DEBUG_TRI_SERVO_OUTPUT_ANGLE_OR_TAIL_TUNE_STATE, 1400);
                 // Gyro has also been stable for 250 ms
                 if (IsDelayElapsed_ms(pTT->lastAdjTime_ms, 20)) {
@@ -541,13 +544,13 @@ STATIC_UNIT_TESTED void tailTuneModeThrustTorque(thrustTorque_t *pTT, const bool
                         // once every 32 times
                         beeperConfirmationBeeps(1);
                     }
-                    if (pTT->servoAvgAngle.numOf >= 500) {
+                    if (pTT->servoAvgAngle.numOf >= 300) {
                         beeper(BEEPER_READY_BEEP);
                         pTT->state = TT_WAIT_FOR_DISARM;
                         pTT->timestamp_ms = GetCurrentTime_ms();
                     }
                 }
-            } else if (IsDelayElapsed_ms(pTT->lastAdjTime_ms, 500)) {
+            } else if (IsDelayElapsed_ms(pTT->lastAdjTime_ms, 300)) {
                 // Sticks are OK but there has not been any valid samples in 1 s, try to loosen the gyro criteria a little
                 pTT->tailTuneGyroLimit += 0.1f;
                 pTT->lastAdjTime_ms = GetCurrentTime_ms();
@@ -557,9 +560,12 @@ STATIC_UNIT_TESTED void tailTuneModeThrustTorque(thrustTorque_t *pTT, const bool
                 }
                 DEBUG_SET(DEBUG_TRI, DEBUG_TRI_SERVO_OUTPUT_ANGLE_OR_TAIL_TUNE_STATE, 1500 + pTT->tailTuneGyroLimit * 10);
             }
+        } else {
+            DEBUG_SET(DEBUG_TRI, DEBUG_TRI_SERVO_OUTPUT_ANGLE_OR_TAIL_TUNE_STATE, 1250);
         }
         break;
     case TT_WAIT_FOR_DISARM:
+        DEBUG_SET(DEBUG_TRI, DEBUG_TRI_SERVO_OUTPUT_ANGLE_OR_TAIL_TUNE_STATE, 1700 + pTT->tailTuneGyroLimit * 10);
         if (!ARMING_FLAG(ARMED)) {
             float averageServoAngle = pTT->servoAvgAngle.sum / 10.0f / pTT->servoAvgAngle.numOf;
             if (averageServoAngle > 90.5f && averageServoAngle < 120.f) {
@@ -583,12 +589,14 @@ STATIC_UNIT_TESTED void tailTuneModeThrustTorque(thrustTorque_t *pTT, const bool
         }
         break;
     case TT_DONE:
+        DEBUG_SET(DEBUG_TRI, DEBUG_TRI_SERVO_OUTPUT_ANGLE_OR_TAIL_TUNE_STATE, 1800);
         if (IsDelayElapsed_ms(pTT->timestamp_ms, 2000)) {
             beeper(BEEPER_READY_BEEP);
             pTT->timestamp_ms = GetCurrentTime_ms();
         }
         break;
     case TT_FAIL:
+        DEBUG_SET(DEBUG_TRI, DEBUG_TRI_SERVO_OUTPUT_ANGLE_OR_TAIL_TUNE_STATE, 1850);
         if (IsDelayElapsed_ms(pTT->timestamp_ms, 2000)) {
             beeper(BEEPER_ACC_CALIBRATION_FAIL);
             pTT->timestamp_ms = GetCurrentTime_ms();
@@ -601,22 +609,22 @@ static void tailTuneModeServoSetup(struct servoSetup_t *pSS, servoParam_t *pServ
 {
     InitDelayMeasurement_ms();
     // Check mode select
-    if (isRcAxisWithinDeadband(PITCH) && (rcCommand[ROLL] < -100)) {
+    if (isRcAxisWithinDeadband(PITCH, TRI_TAIL_TUNE_MIN_DEADBAND) && (rcCommand[ROLL] < -100)) {
         pSS->servoVal = pServoConf->min;
         pSS->pLimitToAdjust = &pServoConf->min;
         beeperConfirmationBeeps(1);
         pSS->state = SS_SETUP;
-    } else if (isRcAxisWithinDeadband(ROLL) && (rcCommand[PITCH] > 100)) {
+    } else if (isRcAxisWithinDeadband(ROLL, TRI_TAIL_TUNE_MIN_DEADBAND) && (rcCommand[PITCH] > 100)) {
         pSS->servoVal = pServoConf->middle;
         pSS->pLimitToAdjust = &pServoConf->middle;
         beeperConfirmationBeeps(2);
         pSS->state = SS_SETUP;
-    } else if (isRcAxisWithinDeadband(PITCH) && (rcCommand[ROLL] > 100)) {
+    } else if (isRcAxisWithinDeadband(PITCH, TRI_TAIL_TUNE_MIN_DEADBAND) && (rcCommand[ROLL] > 100)) {
         pSS->servoVal = pServoConf->max;
         pSS->pLimitToAdjust = &pServoConf->max;
         beeperConfirmationBeeps(3);
         pSS->state = SS_SETUP;
-    } else if (isRcAxisWithinDeadband(ROLL) && (rcCommand[PITCH] < -100)) {
+    } else if (isRcAxisWithinDeadband(ROLL, TRI_TAIL_TUNE_MIN_DEADBAND) && (rcCommand[PITCH] < -100)) {
         pSS->state = SS_CALIB;
         pSS->cal.state = SS_C_IDLE;
     }
@@ -624,7 +632,7 @@ static void tailTuneModeServoSetup(struct servoSetup_t *pSS, servoParam_t *pServ
     case SS_IDLE:
         break;
     case SS_SETUP:
-        if (!isRcAxisWithinDeadband(YAW)) {
+        if (!isRcAxisWithinDeadband(YAW, TRI_TAIL_TUNE_MIN_DEADBAND)) {
             pSS->servoVal += triGetServoDirection() * -1.0f * (float) rcCommand[YAW] * getdT();
             pSS->servoVal = constrainf(pSS->servoVal, 900.0f, 2100.0f);
             *pSS->pLimitToAdjust = pSS->servoVal;

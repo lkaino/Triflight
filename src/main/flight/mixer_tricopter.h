@@ -124,7 +124,7 @@ PG_DECLARE(triMixerConfig_t, triMixerConfig);
 #define TRI_SERVO_SATURATION_DPS_ERROR_LIMIT    (100.0f)
 #define TRI_SERVO_FEEDBACK_LPF_CUTOFF_HZ        (70)
 #define TRI_MOTOR_FEEDBACK_LPF_CUTOFF_HZ        (5)
-
+#define TRI_TAIL_TUNE_MIN_DEADBAND              (12)
 #include "drivers/adc.h"
 
 typedef enum {
@@ -199,8 +199,9 @@ typedef struct tailMotor_s {
     float acceleration; //!< Motor acceleration in output units (us) / second
     float pitchCorrectionGain; //!< Gain added to the calculated tail motor pitch correction to gain more yaw output
     int16_t lastCorrection;
+    uint16_t minOutput;
     uint16_t linearMinOutput; //!< Minimum motor output for linear calculation.
-    int16_t outputRange;
+    uint16_t outputRange;
 } tailMotor_t;
 
 typedef struct tailTune_s {

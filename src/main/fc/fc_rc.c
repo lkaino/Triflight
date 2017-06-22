@@ -343,18 +343,19 @@ void resetYawAxis(void)
     setpointRate[YAW] = 0;
 }
 
-bool isRcAxisWithinDeadband(int32_t axis)
+bool isRcAxisWithinDeadband(int32_t axis, uint8_t minDeadband)
 {
-    int32_t tmp = MIN(ABS(rcData[axis] - rxConfig()->midrc), 500);
+    const int32_t tmp = MIN(ABS(rcData[axis] - rxConfig()->midrc), 500);
     bool ret = false;
+    uint8_t deadband;
     if (axis == YAW) {
-        if (tmp <= rcControlsConfig()->yaw_deadband) {
-            ret = true;
-        }
+        deadband = rcControlsConfig()->yaw_deadband;
     } else {
-        if (tmp <= rcControlsConfig()->deadband) {
-            ret = true;
-        }
+        deadband = rcControlsConfig()->deadband;
+    }
+    deadband = MAX(minDeadband, deadband);
+    if (tmp <= deadband) {
+        ret = true;
     }
     return ret;
 }

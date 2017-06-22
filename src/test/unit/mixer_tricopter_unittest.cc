@@ -161,7 +161,7 @@ class LinearOutputTest: public ::testing::Test {
 protected:
     virtual void SetUp() {
 
-        test_motorLow = 40;
+        test_motorLow = 48;
         test_motorHigh = 2000;
         test_motorRange = test_motorHigh - test_motorLow;
         memset(&servoConf, 0, sizeof(servoConf));
@@ -203,7 +203,7 @@ protected:
 };
 
 TEST_F(LinearOutputTest, getAngleForYawOutput_motor0_output0Percent) {
-    tailMotor.virtualFeedBack = test_motorRange * 0.025;
+    tailMotor.virtualFeedBack = test_motorLow + test_motorRange * 0;
     float output = 0;
     float angle = this->getYaw0Angle(triMixerConfig()->tri_tail_motor_thrustfactor / 10.0);
     EXPECT_NEAR(angle, getAngleForYawOutput(output), 0.05);
@@ -211,37 +211,37 @@ TEST_F(LinearOutputTest, getAngleForYawOutput_motor0_output0Percent) {
 }
 
 TEST_F(LinearOutputTest, getAngleForYawOutput_motor0_output50Percent) {
-    tailMotor.virtualFeedBack = test_motorRange * 0;
+    tailMotor.virtualFeedBack = test_motorLow + test_motorRange * 0;
     float output = tailServo.maxYawOutput * 0.5;
     EXPECT_NEAR(122.8, getAngleForYawOutput(output), 1);
 }
 
 TEST_F(LinearOutputTest, getAngleForYawOutput_motor0_output100Percent) {
-    tailMotor.virtualFeedBack = test_motorRange * 0;
+    tailMotor.virtualFeedBack = test_motorLow + test_motorRange * 0;
     float output = tailServo.maxYawOutput * 1;
     EXPECT_NEAR(tailServo.angleAtLinearMax, getAngleForYawOutput(output), 2);
 }
 
 TEST_F(LinearOutputTest, getAngleForYawOutput_motor0_outputNeg100Percent) {
-    tailMotor.virtualFeedBack = test_motorRange * 0;
+    tailMotor.virtualFeedBack = test_motorLow + test_motorRange * 0;
     float output = -tailServo.maxYawOutput * 1;
     EXPECT_NEAR(tailServo.angleAtLinearMin, getAngleForYawOutput(output), 2);
 }
 
 TEST_F(LinearOutputTest, getAngleForYawOutput_motor0_outputNeg50Percent) {
-    tailMotor.virtualFeedBack = test_motorRange * 0;
+    tailMotor.virtualFeedBack = test_motorLow + test_motorRange * 0;
     float output = -tailServo.maxYawOutput * 0.5;
     EXPECT_NEAR(78.1, getAngleForYawOutput(output), 1);
 }
 
 TEST_F(LinearOutputTest, getAngleForYawOutput_motor40_output50Percent) {
-    tailMotor.virtualFeedBack = test_motorRange * 0.4;
+    tailMotor.virtualFeedBack = test_motorLow + test_motorRange * 0.4;
     float output = tailServo.maxYawOutput * 0.5;
-    EXPECT_NEAR(112.6, getAngleForYawOutput(output), 1);
+    EXPECT_NEAR(111.5, getAngleForYawOutput(output), 1);
 }
 
 TEST_F(LinearOutputTest, getAngleForYawOutput_accuracy) {
-    tailMotor.virtualFeedBack = test_motorRange * 0.5;
+    tailMotor.virtualFeedBack = test_motorLow + test_motorRange * 0.5;
     float output = tailServo.maxYawOutput * 0.5;
     const float angle = getAngleForYawOutput(output);
     output *= 1.001;
@@ -331,13 +331,12 @@ TEST_F(LinearOutputTest, getServoAngle_neg50percent) {
 TEST_F(LinearOutputTest, getLinearServoValue_accuracy) {
     float pidOutput = 500;
     const float pidLimit = 1000;
-    tailMotor.virtualFeedBack = 1500;
+    tailMotor.virtualFeedBack = test_motorLow + test_motorRange * 0.5f;
     const uint16_t servoValue = getLinearServoValue(&servoConf, pidOutput, pidLimit);
     pidOutput += 1.0f;
     const uint16_t newServoValue = getLinearServoValue(&servoConf, pidOutput, pidLimit);
     EXPECT_EQ(1, newServoValue - servoValue);
 }
-
 
 //STUBS
 extern "C" {

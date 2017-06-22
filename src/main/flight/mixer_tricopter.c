@@ -377,7 +377,7 @@ STATIC_UNIT_TESTED float getAngleForYawOutput(float yawOutput)
 {
     float angle;
 
-    float motorWoPitchCorr = tailMotor.virtualFeedBack - tailMotor.linearMinOutput - tailMotor.lastCorrection;
+    float motorWoPitchCorr = tailMotor.virtualFeedBack - tailMotor.minOutput - tailMotor.lastCorrection;
     motorWoPitchCorr = MAX(tailMotor.linearMinOutput, motorWoPitchCorr);
     if (yawOutput < ((motorWoPitchCorr + motorPitchCorrectionCurve[0]) * yawOutputGainCurve[0])) {
         // No force that low

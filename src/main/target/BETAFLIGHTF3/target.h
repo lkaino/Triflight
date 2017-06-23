@@ -121,7 +121,7 @@
 #define RSSI_ADC_PIN            PB2
 #define EXTERNAL1_ADC_PIN       PA6
 
-#define LED_STRIP
+//#define LED_STRIP
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 

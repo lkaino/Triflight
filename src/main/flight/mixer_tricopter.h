@@ -122,6 +122,12 @@ typedef struct triMixerConfig_s{
 #define TRI_SERVO_FEEDBACK_LPF_CUTOFF_HZ        (70)
 #define TRI_MOTOR_FEEDBACK_LPF_CUTOFF_HZ        (5)
 #define TRI_TAIL_TUNE_MIN_DEADBAND              (12)
+
+typedef enum {
+    TRI_ARMING_PREVENT_FLAG_INVALID_SERVO_ANGLE = 0x01,
+    TRI_ARMING_PREVENT_FLAG_UNARMED_TAIL_TUNE = 0x02
+} triArmingPreventFlag_e;
+
 #include "drivers/adc.h"
 
 typedef enum {
@@ -174,6 +180,7 @@ typedef struct thrustTorque_s {
 
 typedef struct tailServo_s {
     pt1Filter_t feedbackFilter;
+    _Bool feedbackHealthy;
     float maxYawOutput;
     float thrustFactor;
     servoParam_t *pConf; //!< Pointer to the tail servo configuration

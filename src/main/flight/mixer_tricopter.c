@@ -83,6 +83,7 @@ static float yawOutputGainCurve[TRI_YAW_FORCE_CURVE_SIZE];
 static float motorPitchCorrectionCurve[TRI_YAW_FORCE_CURVE_SIZE];
 //! Configured output throttle range (max - min)
 static triMixerConfig_t *gpTriMixerConfig;
+static uint32_t preventArmingFlags = 0;
 
 static void initYawForceCurve(void);
 STATIC_UNIT_TESTED uint16_t getServoValueAtAngle(servoParam_t *servoConf, float angle);
@@ -103,6 +104,8 @@ static AdcChannel getServoFeedbackADCChannel(uint8_t tri_servo_feedback);
 static void predictGyroOnDeceleration(void);
 static void tailMotorStep(int16_t setpoint, float dT);
 static int8_t triGetServoDirection(void);
+static void preventArming(triArmingPreventFlag_e flag, _Bool enable);
+static void checkArmingPrevent(void);
 #if USE_AUX_CHANNEL_TUNING
 static int16_t scaleAUXChannel(u8 channel, int16_t scale);
 #endif
@@ -148,7 +151,7 @@ static void initYawForceCurve(void)
     tailServo.pitchZeroAngle = 2.0f
             * atanf((sqrtf(tailServo.thrustFactor * tailServo.thrustFactor + 1) + 1) / tailServo.thrustFactor);
 
-    int16_t angle = TRI_TAIL_SERVO_ANGLE_MID - TRI_TAIL_SERVO_MAX_ANGLE;
+    int16_t angle = TRI_CURVE_FIRST_INDEX_ANGLE;
     for (int32_t i = 0; i < TRI_YAW_FORCE_CURVE_SIZE; i++) {
         const float angleRad = DEGREES_TO_RADIANS(angle);
 
@@ -226,6 +229,8 @@ void triServoMixer(float scaledYawPid, float pidSumLimit)
 
     // Check for tail motor decelaration and determine expected produced yaw error
     predictGyroOnDeceleration();
+
+    checkArmingPrevent();
 }
 
 int16_t triGetMotorCorrection(uint8_t motorIndex)
@@ -242,7 +247,7 @@ int16_t triGetMotorCorrection(uint8_t motorIndex)
         correction = getPitchCorrectionAtTailAngle(DEGREES_TO_RADIANS(servoAngle), tailServo.thrustFactor);
 
         // Multiply the correction to get more authority (yaw boost)
-        if (isAirmodeActive())
+        if (isAirmodeActive() && tailServo.feedbackHealthy)
         {
             correction *= tailMotor.pitchCorrectionGain;
         }
@@ -423,7 +428,7 @@ static void triTailTuneStep(servoParam_t *pServoConf, int16_t *pServoVal)
 {
     if (!IS_RC_MODE_ACTIVE(BOXTAILTUNE)) {
         if (FLIGHT_MODE(TAILTUNE_MODE)) {
-            DISABLE_ARMING_FLAG(PREVENT_ARMING);
+            preventArming(TRI_ARMING_PREVENT_FLAG_UNARMED_TAIL_TUNE, false);
             DISABLE_FLIGHT_MODE(TAILTUNE_MODE);
             tailTune.mode = TT_MODE_NONE;
         }
@@ -435,7 +440,7 @@ static void triTailTuneStep(servoParam_t *pServoConf, int16_t *pServoVal)
                 tailTune.tt.state = TT_IDLE;
             } else {
                 // Prevent accidental arming in servo setup mode
-                ENABLE_ARMING_FLAG(PREVENT_ARMING);
+                preventArming(TRI_ARMING_PREVENT_FLAG_UNARMED_TAIL_TUNE, true);
                 tailTune.mode = TT_MODE_SERVO_SETUP;
                 tailTune.ss.servoVal = pServoConf->middle;
             }
@@ -542,7 +547,7 @@ STATIC_UNIT_TESTED void tailTuneModeThrustTorque(thrustTorque_t *pTT, const bool
     case TT_WAIT_FOR_DISARM:
         DEBUG_SET(DEBUG_TRI, DEBUG_TRI_SERVO_OUTPUT_ANGLE_OR_TAIL_TUNE_STATE, 1700 + pTT->tailTuneGyroLimit * 10);
         if (!ARMING_FLAG(ARMED)) {
-            float averageServoAngle = pTT->servoAvgAngle.sum / 10.0f / pTT->servoAvgAngle.numOf;
+            float averageServoAngle = pTT->servoAvgAngle.sum / pTT->servoAvgAngle.numOf;
             if (averageServoAngle > 90.5f && averageServoAngle < 120.f) {
                 averageServoAngle -= 90.0f;
                 averageServoAngle *= RAD;
@@ -745,6 +750,16 @@ static void updateServoAngle(float dT)
         tailServo.angle = feedbackServoStep(gpTriMixerConfig, ADCRaw);
         tailServo.ADCRaw = ADCRaw;
     }
+
+    if ((tailServo.angle < (TRI_TAIL_SERVO_ANGLE_MID - TRI_TAIL_SERVO_MAX_ANGLE)) ||
+        (tailServo.angle > (TRI_TAIL_SERVO_ANGLE_MID + TRI_TAIL_SERVO_MAX_ANGLE))) {
+        tailServo.feedbackHealthy = false;
+        preventArming(TRI_ARMING_PREVENT_FLAG_INVALID_SERVO_ANGLE, true);
+    } else {
+        tailServo.feedbackHealthy = true;
+        preventArming(TRI_ARMING_PREVENT_FLAG_INVALID_SERVO_ANGLE, false);
+    }
+    servo[6] = tailServo.angle * 10;
 }
 
 static AdcChannel getServoFeedbackADCChannel(uint8_t tri_servo_feedback)
@@ -820,6 +835,24 @@ static int8_t triGetServoDirection(void)
     const int8_t direction = (int8_t) servoDirection(SERVO_RUDDER, INPUT_STABILIZED_YAW);
 
     return direction;
+}
+
+static void preventArming(triArmingPreventFlag_e flag, _Bool enable)
+{
+    if (enable) {
+        preventArmingFlags |= flag;
+    } else {
+        preventArmingFlags &= ~flag;
+    }
+}
+
+static void checkArmingPrevent(void)
+{
+    if (preventArmingFlags) {
+        ENABLE_ARMING_FLAG(PREVENT_ARMING);
+    } else {
+        DISABLE_ARMING_FLAG(PREVENT_ARMING);
+    }
 }
 
 #if USE_AUX_CHANNEL_TUNING

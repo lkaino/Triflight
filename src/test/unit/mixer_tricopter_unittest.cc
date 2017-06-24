@@ -99,7 +99,7 @@ protected:
 
 TEST_F(ThrustFactorCalculationTest, 139) {
     // given
-    tailTune.tt.servoAvgAngle.sum = 12345 + 270000;
+    tailTune.tt.servoAvgAngle.sum = 1234.5 + 27000.0;
     // and
     tailTuneModeThrustTorque(&tailTune.tt, true);
     // then
@@ -109,7 +109,7 @@ TEST_F(ThrustFactorCalculationTest, 139) {
 
 TEST_F(ThrustFactorCalculationTest, 145) {
     // given
-    tailTune.tt.servoAvgAngle.sum = 11836 + 270000;
+    tailTune.tt.servoAvgAngle.sum = 1183.6 + 27000.0;
     // and
     tailTuneModeThrustTorque(&tailTune.tt, true);
     // then
@@ -119,7 +119,7 @@ TEST_F(ThrustFactorCalculationTest, 145) {
 
 TEST_F(ThrustFactorCalculationTest, 125) {
     // given
-    tailTune.tt.servoAvgAngle.sum = 13722 + 270000;
+    tailTune.tt.servoAvgAngle.sum = 1372.2 + 27000.0;
     // and
     tailTuneModeThrustTorque(&tailTune.tt, true);
     // then
@@ -129,7 +129,7 @@ TEST_F(ThrustFactorCalculationTest, 125) {
 
 TEST_F(ThrustFactorCalculationTest, 80) {
     // given
-    tailTune.tt.servoAvgAngle.sum = 21375 + 270000;
+    tailTune.tt.servoAvgAngle.sum = 2137.5 + 27000.0;
     // and
     tailTuneModeThrustTorque(&tailTune.tt, true);
     // then
@@ -139,7 +139,7 @@ TEST_F(ThrustFactorCalculationTest, 80) {
 
 TEST_F(ThrustFactorCalculationTest, err90) {
     // given
-    tailTune.tt.servoAvgAngle.sum = 270000;
+    tailTune.tt.servoAvgAngle.sum = 27000.0;
     // and
     tailTuneModeThrustTorque(&tailTune.tt, true);
     // then
@@ -149,7 +149,7 @@ TEST_F(ThrustFactorCalculationTest, err90) {
 
 TEST_F(ThrustFactorCalculationTest, err130) {
     // given
-    tailTune.tt.servoAvgAngle.sum = 390000;
+    tailTune.tt.servoAvgAngle.sum = 39000.0;
     // and
     tailTuneModeThrustTorque(&tailTune.tt, true);
     // then

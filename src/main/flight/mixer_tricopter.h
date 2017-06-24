@@ -164,7 +164,7 @@ typedef enum {
 } tailtuneMode_e;
 
 typedef struct servoAvgAngle_s {
-    uint32_t sum;
+    float sum;
     uint16_t numOf;
 } servoAvgAngle_t;
 

@@ -115,13 +115,14 @@ typedef struct triMixerConfig_s{
 
 #define USE_AUX_CHANNEL_TUNING                  (0)
 #define TRI_TAIL_SERVO_ANGLE_MID                (90.0f)
-#define TRI_YAW_FORCE_CURVE_SIZE                (100)
-#define TRI_TAIL_SERVO_MAX_ANGLE                (50.0f)
+#define TRI_YAW_FORCE_CURVE_SIZE                (80 + 1)
+#define TRI_TAIL_SERVO_MAX_ANGLE                (40.0f)
 #define TRI_CURVE_FIRST_INDEX_ANGLE             (TRI_TAIL_SERVO_ANGLE_MID - TRI_TAIL_SERVO_MAX_ANGLE)
 #define TRI_SERVO_SATURATION_DPS_ERROR_LIMIT    (100.0f)
 #define TRI_SERVO_FEEDBACK_LPF_CUTOFF_HZ        (70)
 #define TRI_MOTOR_FEEDBACK_LPF_CUTOFF_HZ        (5)
 #define TRI_TAIL_TUNE_MIN_DEADBAND              (12)
+#define TRI_SERVO_SATURED_GYRO_ERROR            (75.0f)
 
 typedef enum {
     TRI_ARMING_PREVENT_FLAG_INVALID_SERVO_ANGLE = 0x01,

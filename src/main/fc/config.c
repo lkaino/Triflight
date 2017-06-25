@@ -264,7 +264,7 @@ void resetServoConfig(servoConfig_t *servoConfig)
 
 void resetTriMixerConfig(triMixerConfig_t *triMixerConfig)
 {
-    triMixerConfig->tri_motor_acc_yaw_correction = 20;
+    triMixerConfig->tri_motor_acc_yaw_correction = 0;
     triMixerConfig->tri_motor_acceleration = 0.18f;
     triMixerConfig->tri_servo_feedback = DEFAULT_SERVO_FEEDBACK_SOURCE;
     triMixerConfig->tri_servo_max_adc = 0;

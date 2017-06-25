@@ -645,7 +645,8 @@ static void applyMixToMotors(float motorMix[MAX_SUPPORTED_MOTORS])
     // roll/pitch/yaw. This could move throttle down, but also up for those low throttle flips.
     for (uint32_t i = 0; i < motorCount; i++) {
         float motorOutput = motorOutputMin + (motorOutputRange * (motorOutputMixSign * motorMix[i] + throttle * currentMixer[i].throttle));
-        motorOutput += triGetMotorCorrection(i);
+        const int16_t correction = triGetMotorCorrection(i);
+        motorOutput += correction;
 
         if (failsafeIsActive()) {
             if (isMotorProtocolDshot()) {
@@ -654,7 +655,11 @@ static void applyMixToMotors(float motorMix[MAX_SUPPORTED_MOTORS])
 
             motorOutput = constrain(motorOutput, disarmMotorOutput, motorRangeMax);
         } else {
-            motorOutput = constrain(motorOutput, motorRangeMin, motorRangeMax);
+            if (isAirmodeActive()) {
+                motorOutput = constrain(motorOutput, motorRangeMin + correction, motorRangeMax);
+            } else {
+                motorOutput = constrain(motorOutput, motorRangeMin, motorRangeMax);
+            }
         }
 
         // Motor stop handling
@@ -733,7 +738,7 @@ void mixTable(uint8_t vbatPidCompensation)
             throttle = 0.5f;
         }
     } else {
-        if (isAirmodeActive() || throttle > 0.5f) {  // Only automatically adjust throttle when airmode enabled. Airmode logic is always active on high throttle
+        if (isAirmodeActive() || throttle > 0.5f) {  // Only automatically adjust throttle during airmode scenario
             const float throttleLimitOffset = motorMixRange / 2.0f;
             throttle = constrainf(throttle, 0.0f + throttleLimitOffset, 1.0f - throttleLimitOffset);
         }

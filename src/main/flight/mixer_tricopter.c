@@ -195,7 +195,7 @@ static void initYawForceCurve(void)
     if (ABS(maxPosForce) < ABS(maxNegForce)) {
         const float maxOutput = ABS(maxPosForce);
         maxLinearAngle = maxAngle;
-        const uint32_t indexMax = (maxLinearAngle - TRI_CURVE_FIRST_INDEX_ANGLE);
+        const uint32_t indexMax = TRI_YAW_FORCE_CURVE_SIZE - 1;
         tailServo.maxYawOutput = maxOutput * motorPitchCorrectionCurve[indexMax];
         minLinearAngle = binarySearchOutput(-tailServo.maxYawOutput, 0);
     } else {
@@ -299,7 +299,7 @@ _Bool triMixerInUse(void)
 
 _Bool triIsServoSaturated(float rateError)
 {
-    if (fabsf(rateError) > 75.0f) {
+    if (fabsf(rateError) > TRI_SERVO_SATURED_GYRO_ERROR) {
         return true;
     } else {
         return false;
@@ -813,24 +813,28 @@ static AdcChannel getServoFeedbackADCChannel(uint8_t tri_servo_feedback)
 static void predictGyroOnDeceleration(void)
 {
     static float previousMotorSpeed = 1000.0f;
-    const float tailMotorSpeed = tailMotor.virtualFeedBack;
-    // Calculate how much the motor speed changed since last time
-    float acceleration = (tailMotorSpeed - previousMotorSpeed);
 
-    previousMotorSpeed = tailMotorSpeed;
-    float error = 0;
-    if (acceleration < 0.0f)
+    if (gpTriMixerConfig->tri_motor_acc_yaw_correction > 0)
     {
-        // Tests have shown that this is mostly needed when throttle is cut (motor decelerating), so only
-        // set the expected gyro error in that case.
-        // Set the expected axis error based on tail motor acceleration and configured gain
-        error = acceleration * gpTriMixerConfig->tri_motor_acc_yaw_correction * 10.0f;
-        error *= sin_approx(DEGREES_TO_RADIANS(triGetCurrentServoAngle()));
+        const float tailMotorSpeed = tailMotor.virtualFeedBack;
+        // Calculate how much the motor speed changed since last time
+        float acceleration = (tailMotorSpeed - previousMotorSpeed);
+
+        previousMotorSpeed = tailMotorSpeed;
+        float error = 0;
+        if (acceleration < 0.0f)
+        {
+            // Tests have shown that this is mostly needed when throttle is cut (motor decelerating), so only
+            // set the expected gyro error in that case.
+            // Set the expected axis error based on tail motor acceleration and configured gain
+            error = acceleration * gpTriMixerConfig->tri_motor_acc_yaw_correction * 10.0f;
+            error *= sin_approx(DEGREES_TO_RADIANS(triGetCurrentServoAngle()));
+        }
+
+        DEBUG_SET(DEBUG_TRI, DEBUG_TRI_YAW_ERROR, 1000 + error);
+
+        pidSetExpectedGyroError(FD_YAW, error);
     }
-
-    DEBUG_SET(DEBUG_TRI, DEBUG_TRI_YAW_ERROR, 1000 + error);
-
-    pidSetExpectedGyroError(FD_YAW, error);
 }
 
 static void tailMotorStep(int16_t setpoint, float dT)

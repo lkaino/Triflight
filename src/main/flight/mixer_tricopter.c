@@ -139,6 +139,11 @@ void triInitFilters()
     pt1FilterInit(&tailServo.feedbackFilter, TRI_SERVO_FEEDBACK_LPF_CUTOFF_HZ, dT);
 }
 
+static float motorToThrust(float motor)
+{
+    return motor * (1.0f + (motor / tailMotor.outputRange) * 2.0f);
+}
+
 static void initYawForceCurve(void)
 {
     // DERIVATE(1/(sin(x)-cos(x)/tailServoThrustFactor)) = 0
@@ -171,7 +176,7 @@ static void initYawForceCurve(void)
         const float maxOutput = ABS(maxPosForce);
         maxLinearAngle = maxAngle;
         const uint32_t indexMax = TRI_YAW_FORCE_CURVE_SIZE - 1;
-        tailServo.maxYawOutput = maxOutput * motorPitchCorrectionCurve[indexMax];
+        tailServo.maxYawOutput = maxOutput * motorToThrust(motorPitchCorrectionCurve[indexMax]);
         minLinearAngle = binarySearchOutput(-tailServo.maxYawOutput, 0);
     } else {
         // This would be the case if tail motor is spinning CW
@@ -337,7 +342,7 @@ STATIC_UNIT_TESTED float binarySearchOutput(float yawOutput, float motorWoPitchC
 
     while (higher > lower + 1) {
         const int32_t mid = (lower + higher) / 2;
-        if (((motorWoPitchCorr + motorPitchCorrectionCurve[mid]) * yawOutputGainCurve[mid]) > yawOutput) {
+        if ((motorToThrust(motorWoPitchCorr + motorPitchCorrectionCurve[mid]) * yawOutputGainCurve[mid]) > yawOutput) {
             higher = mid;
         } else {
             lower = mid;
@@ -345,8 +350,8 @@ STATIC_UNIT_TESTED float binarySearchOutput(float yawOutput, float motorWoPitchC
     }
 
     // Interpolating
-    const float outputLow = (motorWoPitchCorr + motorPitchCorrectionCurve[lower]) * yawOutputGainCurve[lower];
-    const float outputHigh = (motorWoPitchCorr + motorPitchCorrectionCurve[higher]) * yawOutputGainCurve[higher];
+    const float outputLow = (motorToThrust(motorWoPitchCorr + motorPitchCorrectionCurve[lower])) * yawOutputGainCurve[lower];
+    const float outputHigh = (motorToThrust(motorWoPitchCorr + motorPitchCorrectionCurve[higher])) * yawOutputGainCurve[higher];
     const float angleLow = TRI_CURVE_FIRST_INDEX_ANGLE + lower;
     const float angle = angleLow + (yawOutput - outputLow) / (outputHigh - outputLow);
 
@@ -359,10 +364,10 @@ STATIC_UNIT_TESTED float getAngleForYawOutput(float yawOutput)
 
     float motorWoPitchCorr = tailMotor.virtualFeedBack - tailMotor.minOutput - tailMotor.lastCorrection;
     motorWoPitchCorr = MAX(tailMotor.linearMinOutput, motorWoPitchCorr);
-    if (yawOutput < ((motorWoPitchCorr + motorPitchCorrectionCurve[0]) * yawOutputGainCurve[0])) {
+    if (yawOutput < (motorToThrust((motorWoPitchCorr + motorPitchCorrectionCurve[0])) * yawOutputGainCurve[0])) {
         // No force that low
         angle = tailServo.angleAtLinearMin;
-    } else if (yawOutput > ((motorWoPitchCorr + motorPitchCorrectionCurve[TRI_YAW_FORCE_CURVE_SIZE - 1]) * yawOutputGainCurve[TRI_YAW_FORCE_CURVE_SIZE - 1])) {
+    } else if (yawOutput > (motorToThrust((motorWoPitchCorr + motorPitchCorrectionCurve[TRI_YAW_FORCE_CURVE_SIZE - 1])) * yawOutputGainCurve[TRI_YAW_FORCE_CURVE_SIZE - 1])) {
         // No force that high
         angle = tailServo.angleAtLinearMax;
     } else {
@@ -751,8 +756,8 @@ static void updateServoAngle(float dT)
         tailServo.ADCRaw = ADCRaw;
     }
 
-    if ((tailServo.angle < (TRI_TAIL_SERVO_ANGLE_MID - TRI_TAIL_SERVO_MAX_ANGLE)) ||
-        (tailServo.angle > (TRI_TAIL_SERVO_ANGLE_MID + TRI_TAIL_SERVO_MAX_ANGLE))) {
+    if ((tailServo.angle < (TRI_TAIL_SERVO_INVALID_ANGLE_MIN)) ||
+        (tailServo.angle > (TRI_TAIL_SERVO_INVALID_ANGLE_MAX))) {
         tailServo.feedbackHealthy = false;
         preventArming(TRI_ARMING_PREVENT_FLAG_INVALID_SERVO_ANGLE, true);
     } else {

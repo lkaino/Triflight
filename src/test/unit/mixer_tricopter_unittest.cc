@@ -333,7 +333,7 @@ TEST_F(LinearOutputTest, getLinearServoValue_accuracy) {
     const float pidLimit = 1000;
     tailMotor.virtualFeedBack = test_motorLow + test_motorRange * 0.5f;
     const uint16_t servoValue = getLinearServoValue(&servoConf, pidOutput, pidLimit);
-    pidOutput += 1.0f;
+    pidOutput += 3.0f;
     const uint16_t newServoValue = getLinearServoValue(&servoConf, pidOutput, pidLimit);
     EXPECT_EQ(1, newServoValue - servoValue);
 }

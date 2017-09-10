@@ -313,14 +313,14 @@ _Bool triIsServoSaturated(float rateError)
 
 STATIC_UNIT_TESTED uint16_t getServoValueAtAngle(servoParam_t *servoConf, float angle)
 {
-    const int16_t servoMid = servoConf->middle;
+    const float servoMid = servoConf->middle;
     uint16_t servoValue;
 
     if (angle == TRI_TAIL_SERVO_ANGLE_MID) {
         servoValue = servoMid;
     } else {
         const int8_t direction = triGetServoDirection();
-        const uint16_t angleRange = tailServo.maxDeflection;
+        const float angleRange = tailServo.maxDeflection;
         float angleDiff;
         int8_t servoRange; // -1 == min-mid, 1 == mid-max
 
@@ -340,13 +340,13 @@ STATIC_UNIT_TESTED uint16_t getServoValueAtAngle(servoParam_t *servoConf, float 
             }
         }
         if (servoRange < 0) {
-            const int16_t servoMin = servoConf->min;
+            const float servoMin = servoConf->min;
 
             servoValue = servoMid - angleDiff * (servoMid - servoMin) / angleRange;
         } else {
-            const int16_t servoMax = servoConf->max;
+            const float servoMax = servoConf->max;
 
-            servoValue = servoMid + angleDiff * (servoMax - servoMid) / angleRange;
+            servoValue = lroundf(servoMid + angleDiff * (servoMax - servoMid) / angleRange);
         }
     }
 

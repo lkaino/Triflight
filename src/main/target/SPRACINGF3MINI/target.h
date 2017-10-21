@@ -69,11 +69,11 @@
 #define USE_ACC_MPU6500
 #define ACC_MPU6500_ALIGN       CW180_DEG
 
-#define MAG
-#define USE_MPU9250_MAG // Enables bypass configuration
-#define USE_MAG_AK8975
-#define USE_MAG_HMC5883 // External
-#define MAG_AK8975_ALIGN        CW90_DEG_FLIP
+//#define MAG
+//#define USE_MPU9250_MAG // Enables bypass configuration
+//#define USE_MAG_AK8975
+//#define USE_MAG_HMC5883 // External
+//#define MAG_AK8975_ALIGN        CW90_DEG_FLIP
 #endif
 
 //#define SONAR

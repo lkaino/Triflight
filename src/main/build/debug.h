@@ -62,5 +62,6 @@ typedef enum {
     DEBUG_ESC_SENSOR,
     DEBUG_SCHEDULER,
     DEBUG_STACK,
+    DEBUG_TRI,
     DEBUG_COUNT
 } debugType_e;

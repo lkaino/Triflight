@@ -145,3 +145,5 @@ bool isMotorProtocolDshot(void);
 uint16_t convertExternalToMotor(uint16_t externalValue);
 uint16_t convertMotorToExternal(uint16_t motorValue);
 float mixGetScaledAxisPidf(int axis);
+uint16_t mixGetMotorOutputLow();
+uint16_t mixGetMotorOutputHigh();

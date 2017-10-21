@@ -150,9 +150,9 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->P8[PITCH] = 39;
     pidProfile->I8[PITCH] = 50;
     pidProfile->D8[PITCH] = 20;
-    pidProfile->P8[YAW] = 84;
+    pidProfile->P8[YAW] = 73;
     pidProfile->I8[YAW] = 40;
-    pidProfile->D8[YAW] = 50;
+    pidProfile->D8[YAW] = 26;
     pidProfile->P8[PIDALT] = 50;
     pidProfile->I8[PIDALT] = 0;
     pidProfile->D8[PIDALT] = 0;
@@ -187,7 +187,7 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->levelSensitivity = 55;
     pidProfile->setpointRelaxRatio = 100;
     pidProfile->dtermSetpointWeight = 100;
-    pidProfile->yawRateAccelLimit = 10.0f;
+    pidProfile->yawRateAccelLimit = 50.0f;
     pidProfile->rateAccelLimit = 0.0f;
     pidProfile->itermThrottleThreshold = 350;
     pidProfile->itermAcceleratorGain = 3.0f;
@@ -264,7 +264,7 @@ void resetServoConfig(servoConfig_t *servoConfig)
 
 void resetTriMixerConfig(triMixerConfig_t *triMixerConfig)
 {
-    triMixerConfig->tri_motor_acc_yaw_correction = 20;
+    triMixerConfig->tri_motor_acc_yaw_correction = 0;
     triMixerConfig->tri_motor_acceleration = 0.18f;
     triMixerConfig->tri_servo_feedback = DEFAULT_SERVO_FEEDBACK_SOURCE;
     triMixerConfig->tri_servo_max_adc = 0;
@@ -273,7 +273,6 @@ void resetTriMixerConfig(triMixerConfig_t *triMixerConfig)
     triMixerConfig->tri_tail_motor_thrustfactor = 54; // Default for RCExplorer Baby tricopter
     triMixerConfig->tri_tail_servo_speed = 300; // Default for BMS-210DMH at 5V
     triMixerConfig->tri_yaw_boost = 240;
-    triMixerConfig->tri_dynamic_yaw_maxthrottle = 38;
 }
 #endif
 

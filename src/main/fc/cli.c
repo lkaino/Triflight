@@ -317,7 +317,8 @@ static const char * const lookupTableDebug[DEBUG_COUNT] = {
     "ANGLERATE",
     "ESC_SENSOR",
     "SCHEDULER",
-    "STACK"
+    "STACK",
+    "TRI"
 };
 
 #ifdef OSD
@@ -668,7 +669,6 @@ const clivalue_t valueTable[] = {
     { "tri_motor_acc_yaw_correction",VAR_UINT16| MASTER_VALUE, &triMixerConfig()->tri_motor_acc_yaw_correction, .config.minmax = { 0, TRI_MOTOR_ACC_CORRECTION_MAX }},
     { "tri_motor_acceleration",     VAR_FLOAT  | MASTER_VALUE, &triMixerConfig()->tri_motor_acceleration, .config.minmax = { 0.01f, 1.0f }},
     { "tri_yaw_boost",              VAR_UINT16 | MASTER_VALUE, &triMixerConfig()->tri_yaw_boost, .config.minmax = { 0, 700}},
-    { "tri_dynamic_yaw_maxthrottle",VAR_UINT16 | MASTER_VALUE, &triMixerConfig()->tri_dynamic_yaw_maxthrottle, .config.minmax = { 0, 100}},
 #endif
 
     { "rc_rate",                    VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].rcRate8, .config.minmax = { 0,  255 } },

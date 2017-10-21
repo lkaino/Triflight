@@ -478,6 +478,7 @@ void mixTable(pidProfile_t *pidProfile)
     uint16_t motorOutputMin, motorOutputMax;
     static uint16_t throttlePrevious = 0;   // Store the last throttle direction for deadband transitions
     bool mixerInversion = false;
+    const bool airmodeIsActive = isAirmodeActive();
 
     // Find min and max throttle based on condition.
     if (feature(FEATURE_3D)) {
@@ -559,11 +560,11 @@ void mixTable(pidProfile_t *pidProfile)
             motorMix[i] /= motorMixRange;
         }
         // Get the maximum correction by setting offset to center when airmode enabled
-        if (isAirmodeActive()) {
+        if (airmodeIsActive) {
             throttle = 0.5f;
         }
     } else {
-        if (isAirmodeActive()) {  // Only automatically adjust throttle during airmode scenario
+        if (airmodeIsActive) {  // Only automatically adjust throttle during airmode scenario
             float throttleLimitOffset = motorMixRange / 2.0f;
             throttle = constrainf(throttle, 0.0f + throttleLimitOffset, 1.0f - throttleLimitOffset);
         }
@@ -574,7 +575,8 @@ void mixTable(pidProfile_t *pidProfile)
     uint32_t i = 0;
     for (i = 0; i < motorCount; i++) {
         motor[i] = motorOutputMin + lrintf(motorOutputRange * (motorMix[i] + (throttle * currentMixer[i].throttle)));
-        motor[i] += triGetMotorCorrection(i);
+        const int16_t correction = triGetMotorCorrection(i);
+        motor[i] += correction;
         // Dshot works exactly opposite in lower 3D section.
         if (mixerInversion) {
             motor[i] = motorOutputMin + (motorOutputMax - motor[i]);
@@ -586,7 +588,11 @@ void mixTable(pidProfile_t *pidProfile)
 
             motor[i] = constrain(motor[i], disarmMotorOutput, motorOutputMax);
         } else {
-            motor[i] = constrain(motor[i], motorOutputMin, motorOutputMax);
+            if (airmodeIsActive) {
+                motor[i] = constrain(motor[i], motorOutputMin + correction, motorOutputMax);
+            } else {
+                motor[i] = constrain(motor[i], motorOutputMin, motorOutputMax);
+            }
         }
 
         // Motor stop handling
@@ -648,4 +654,14 @@ uint16_t convertMotorToExternal(uint16_t motorValue)
 float mixGetScaledAxisPidf(int axis)
 {
     return scaledAxisPIDf[axis];
+}
+
+uint16_t mixGetMotorOutputLow()
+{
+    return motorOutputLow;
+}
+
+uint16_t mixGetMotorOutputHigh()
+{
+    return motorOutputHigh;
 }

@@ -119,6 +119,7 @@
 #define ADC24_DMA_REMAP // moves ADC2 DMA from DMA2ch1 to DMA2ch3.
 #define VBAT_ADC_PIN            PA4
 #define CURRENT_METER_ADC_PIN   PA5
+#define RSSI_ADC_PIN            PA6
 
 // mpu_int definition in sensors/initialisation.c
 #define USE_EXTI
@@ -127,7 +128,7 @@
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
-#define LED_STRIP
+//#define LED_STRIP     // LED strip pin used for servo feedback (RSSI) in Triflight
 #define USE_ESC_SENSOR
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM

@@ -129,7 +129,6 @@ void pgResetFn_triMixerConfig(triMixerConfig_t *triMixerConfig)
     triMixerConfig->tri_tail_motor_thrustfactor = 54; // Default for RCExplorer Baby tricopter
     triMixerConfig->tri_tail_servo_speed = 300; // Default for BMS-210DMH at 5V
     triMixerConfig->tri_yaw_boost = 240;
-    triMixerConfig->tri_dynamic_yaw_maxthrottle = 38;
     triMixerConfig->tri_servo_angle_at_max = 40;
 }
 

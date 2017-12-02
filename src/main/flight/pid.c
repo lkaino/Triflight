@@ -44,17 +44,24 @@
 #include "flight/pid.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
+#include "flight/mixer_tricopter.h"
 #include "flight/navigation.h"
 
 #include "sensors/gyro.h"
 #include "sensors/acceleration.h"
 
+//! Integrator is disabled when rate error exceeds this limit
+#define LUXFLOAT_INTEGRATOR_TRI_YAW_DISABLE_LIMIT_DPS (75.0f)
+
 uint32_t targetPidLooptime;
 static bool pidStabilisationEnabled;
+static bool disableTPAForYaw = false;
 
 static bool inCrashRecoveryMode = false;
 
 float axisPID_P[3], axisPID_I[3], axisPID_D[3];
+
+static float expectedGyroError[3] = {0.0f};
 
 static float dT;
 
@@ -148,9 +155,19 @@ void pidSetItermAccelerator(float newItermAccelerator)
     itermAccelerator = newItermAccelerator;
 }
 
+void pidResetErrorGyroAxis(flight_dynamics_index_t axis)
+{
+    axisPID_I[axis] = 0.0f;
+}
+
 void pidStabilisationState(pidStabilisationState_e pidControllerState)
 {
     pidStabilisationEnabled = (pidControllerState == PID_STABILISATION_ON) ? true : false;
+}
+
+float getdT()
+{
+    return dT;
 }
 
 const angle_index_t rcAliasToAngleIndexMap[] = { AI_ROLL, AI_PITCH };
@@ -284,7 +301,6 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     const float ITermWindupPoint = (float)pidProfile->itermWindupPointPercent / 100.0f;
     ITermWindupPointInv = 1.0f / (1.0f - ITermWindupPoint);
     crashTimeLimitUs = pidProfile->crash_time * 1000;
-    crashTimeDelayUs = pidProfile->crash_delay * 1000;
     crashRecoveryAngleDeciDegrees = pidProfile->crash_recovery_angle * 10;
     crashRecoveryRate = pidProfile->crash_recovery_rate;
     crashGyroThreshold = pidProfile->crash_gthreshold;
@@ -292,6 +308,7 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     crashSetpointThreshold = pidProfile->crash_setpoint_threshold;
     crashLimitYaw = pidProfile->crash_limit_yaw;
     itermLimit = pidProfile->itermLimit;
+    disableTPAForYaw = triMixerInUse();
 }
 
 void pidInit(const pidProfile_t *pidProfile)
@@ -427,7 +444,7 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
 
         // -----calculate error rate
         const float gyroRate = gyro.gyroADCf[axis]; // Process variable from gyro output in deg/sec
-        float errorRate = currentPidSetpoint - gyroRate; // r - y
+        float errorRate = currentPidSetpoint - gyroRate + expectedGyroError[axis]; // r - y
 
         if (inCrashRecoveryMode && cmpTimeUs(currentTimeUs, crashDetectedAtUs) > crashTimeDelayUs) {
             if (pidProfile->crash_recovery == PID_CRASH_RECOVERY_BEEP) {
@@ -485,9 +502,16 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
         // b = 1 and only c (dtermSetpointWeight) can be tuned (amount derivative on measurement or error).
 
         // -----calculate P component and add Dynamic Part based on stick input
-        axisPID_P[axis] = Kp[axis] * errorRate * tpaFactor;
+        axisPID_P[axis] = Kp[axis] * errorRate;
         if (axis == FD_YAW) {
+            if (!disableTPAForYaw) {
+                axisPID_P[axis] *=  tpaFactor;
+            }
             axisPID_P[axis] = ptermYawFilterApplyFn(ptermYawFilter, axisPID_P[axis]);
+        }
+        else
+        {
+            axisPID_P[axis] *=  tpaFactor;
         }
 
         // -----calculate I component
@@ -500,7 +524,7 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
         }
 
         // -----calculate D component
-        if (axis != FD_YAW) {
+        if ((axis != FD_YAW) || triMixerInUse()) {
             // apply filters
             float gyroRateFiltered = dtermNotchFilterApplyFn(dtermFilterNotch[axis], gyroRate);
             gyroRateFiltered = dtermLpfApplyFn(dtermFilterLpf[axis], gyroRateFiltered);
@@ -550,4 +574,9 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
 bool crashRecoveryModeActive(void)
 {
 	return inCrashRecoveryMode;
+}
+
+void pidSetExpectedGyroError(flight_dynamics_index_t axis, float error)
+{
+    expectedGyroError[axis] = error;
 }

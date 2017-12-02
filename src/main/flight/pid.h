@@ -22,6 +22,8 @@
 #include "common/time.h"
 #include "config/parameter_group.h"
 
+#include "common/axis.h"
+
 #define MAX_PID_PROCESS_DENOM       16
 #define PID_CONTROLLER_BETAFLIGHT   1
 #define PID_MIXER_SCALING           1000.0f
@@ -125,7 +127,6 @@ extern uint32_t targetPidLooptime;
 
 // PIDweight is a scale factor for PIDs which is derived from the throttle and TPA setting, and 100 = 100% scale means no PID reduction
 extern uint8_t PIDweight[3];
-
 void pidResetErrorGyroState(void);
 void pidStabilisationState(pidStabilisationState_e pidControllerState);
 void pidSetItermAccelerator(float newItermAccelerator);
@@ -134,5 +135,8 @@ void pidInitConfig(const pidProfile_t *pidProfile);
 void pidInit(const pidProfile_t *pidProfile);
 void pidCopyProfile(uint8_t dstPidProfileIndex, uint8_t srcPidProfileIndex);
 bool crashRecoveryModeActive(void);
-
+void pidResetErrorGyroAxis(flight_dynamics_index_t axis);
+void pidSetExpectedGyroError(flight_dynamics_index_t axis, float error);
+float getdT();
 #endif
+

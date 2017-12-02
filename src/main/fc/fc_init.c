@@ -122,6 +122,7 @@
 #include "flight/failsafe.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
+#include "flight/mixer_tricopter.h"
 #include "flight/navigation.h"
 #include "flight/pid.h"
 #include "flight/servos.h"
@@ -486,9 +487,21 @@ void init(void)
 #ifdef USE_ADC
     adcConfigMutable()->vbat.enabled = (batteryConfig()->voltageMeterSource == VOLTAGE_METER_ADC);
     adcConfigMutable()->current.enabled = (batteryConfig()->currentMeterSource == CURRENT_METER_ADC);
-
+    
     // The FrSky D SPI RX sends RSSI_ADC_PIN (if configured) as A2
     adcConfigMutable()->rssi.enabled = feature(FEATURE_RSSI_ADC) || (feature(FEATURE_RX_SPI) && rxConfig()->rx_spi_protocol == RX_SPI_FRSKY_D);
+
+    if (triMixerInUse()) {
+        if (triMixerConfig()->tri_servo_feedback == TRI_SERVO_FB_RSSI) {
+            adcConfigMutable()->rssi.enabled = true;
+        }
+        if (triMixerConfig()->tri_servo_feedback == TRI_SERVO_FB_CURRENT) {
+            adcConfigMutable()->current.enabled = true;
+        }
+        if (triMixerConfig()->tri_servo_feedback == TRI_SERVO_FB_EXT1) {
+            adcConfigMutable()->external1.enabled = true;
+        }
+    }
     adcInit(adcConfig());
 #endif
 

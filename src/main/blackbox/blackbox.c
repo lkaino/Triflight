@@ -56,6 +56,7 @@
 #include "flight/navigation.h"
 #include "flight/pid.h"
 #include "flight/servos.h"
+#include "flight/mixer_tricopter.h"
 
 #include "io/beeper.h"
 #include "io/gps.h"
@@ -1024,7 +1025,7 @@ static void loadMainState(timeUs_t currentTimeUs)
 
 #ifdef USE_SERVOS
     //Tail servo for tricopters
-    blackboxCurrent->servo[5] = servo[5];
+    blackboxCurrent->servo[5] = triGetCurrentServoAngle();
 #endif
 #else
     UNUSED(currentTimeUs);

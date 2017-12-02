@@ -42,7 +42,7 @@ FLASH_SIZE ?=
 # Things that need to be maintained as the source changes
 #
 
-FORKNAME      = betaflight
+FORKNAME      = triflight
 
 # Working directories
 ROOT            := $(patsubst %/,%,$(dir $(lastword $(MAKEFILE_LIST))))

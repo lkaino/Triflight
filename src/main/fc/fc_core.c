@@ -77,6 +77,7 @@
 #include "flight/failsafe.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
+#include "flight/mixer_tricopter.h"
 #include "flight/navigation.h"
 #include "flight/pid.h"
 #include "flight/servos.h"
@@ -622,7 +623,7 @@ static void subTaskMainSubprocesses(timeUs_t currentTimeUs)
     if (isUsingSticksForArming() && rcData[THROTTLE] <= rxConfig()->mincheck
 #ifndef USE_QUAD_MIXER_ONLY
 #ifdef USE_SERVOS
-                && !((mixerConfig()->mixerMode == MIXER_TRI || mixerConfig()->mixerMode == MIXER_CUSTOM_TRI) && servoConfig()->tri_unarmed_servo)
+                && !(triMixerInUse() && triMixerConfig()->tri_unarmed_servo)
 #endif
                 && mixerConfig()->mixerMode != MIXER_AIRPLANE
                 && mixerConfig()->mixerMode != MIXER_FLYING_WING

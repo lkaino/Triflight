@@ -71,6 +71,7 @@ typedef enum {
 #ifdef USE_MAX7456
     TABLE_MAX7456_CLOCK,
 #endif
+    TABLE_SERVO_FEEDBACK,
     LOOKUP_TABLE_COUNT
 } lookupTableIndex_e;
 

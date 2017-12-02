@@ -93,6 +93,7 @@ FC_SRC = \
             flight/failsafe.c \
             flight/imu.c \
             flight/mixer.c \
+			flight/mixer_tricopter.c \
             flight/pid.c \
             flight/servos.c \
             io/serial_4way.c \
@@ -209,6 +210,7 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             fc/runtime_config.c \
             flight/imu.c \
             flight/mixer.c \
+			flight/mixer_tricopter.c \
             flight/pid.c \
             io/serial.c \
             rx/ibus.c \

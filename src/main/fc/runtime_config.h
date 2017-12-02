@@ -50,7 +50,8 @@ typedef enum {
     ARMING_DISABLED_CMS_MENU        = (1 << 12),
     ARMING_DISABLED_OSD_MENU        = (1 << 13),
     ARMING_DISABLED_BST             = (1 << 14),
-    ARMING_DISABLED_ARM_SWITCH      = (1 << 15), // Needs to be the last element, since it's always activated if one of the others is active when arming
+    ARMING_DISABLED_TAIL_TUNE       = (1 << 15),
+    ARMING_DISABLED_ARM_SWITCH      = (1 << 16), // Needs to be the last element, since it's always activated if one of the others is active when arming
 } armingDisableFlags_e;
 
 #define NUM_ARMING_DISABLE_FLAGS 16
@@ -75,7 +76,8 @@ typedef enum {
     UNUSED_MODE     = (1 << 7), // old autotune
     PASSTHRU_MODE   = (1 << 8),
     SONAR_MODE      = (1 << 9),
-    FAILSAFE_MODE   = (1 << 10)
+    FAILSAFE_MODE   = (1 << 10),
+    TAILTUNE_MODE   = (1 << 11),
 } flightModeFlags_e;
 
 extern uint16_t flightModeFlags;

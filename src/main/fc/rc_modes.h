@@ -59,6 +59,7 @@ typedef enum {
     BOXCAMERA3,
     BOXFLIPOVERAFTERCRASH,
     BOXPREARM,
+    BOXTAILTUNE,
     CHECKBOX_ITEM_COUNT
 } boxId_e;
 

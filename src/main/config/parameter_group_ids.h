@@ -118,6 +118,8 @@
 #define PG_BETAFLIGHT_END 524
 
 
+#define PG_TRICOPTER_CONFIG 1001
+
 // OSD configuration (subject to change)
 #define PG_OSD_FONT_CONFIG 2047
 #define PG_OSD_VIDEO_CONFIG 2046

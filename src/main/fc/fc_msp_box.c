@@ -78,6 +78,7 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT] = {
     { BOXCAMERA3, "CAMERA CONTROL 3", 34 },
     { BOXFLIPOVERAFTERCRASH, "FLIP OVER AFTER CRASH", 35 },
     { BOXPREARM, "PREARM", 36 },
+    { BOXTAILTUNE, "TAIL TUNE", 37},
 };
 
 // mask of enabled IDs, calculated on startup based on enabled features. boxId_e is used as bit index

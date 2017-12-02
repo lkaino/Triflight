@@ -49,6 +49,7 @@
 #include "flight/failsafe.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
+#include "flight/mixer_tricopter.h"
 #include "flight/pid.h"
 
 #include "rx/rx.h"
@@ -346,7 +347,7 @@ bool areMotorsRunning(void)
 
 bool mixerIsOutputSaturated(int axis, float errorRate)
 {
-    if (axis == FD_YAW && (currentMixerMode == MIXER_TRI || currentMixerMode == MIXER_CUSTOM_TRI)) {
+    if (axis == FD_YAW && triMixerInUse()) {
         return errorRate > TRICOPTER_ERROR_RATE_YAW_SATURATED;
     } else {
         return motorMixRange >= 1.0f;
@@ -640,6 +641,7 @@ static void applyMixToMotors(float motorMix[MAX_SUPPORTED_MOTORS])
     // roll/pitch/yaw. This could move throttle down, but also up for those low throttle flips.
     for (uint32_t i = 0; i < motorCount; i++) {
         float motorOutput = motorOutputMin + (motorOutputRange * (motorOutputMixSign * motorMix[i] + throttle * currentMixer[i].throttle));
+        motorOutput += triGetMotorCorrection(i);
 
         if (failsafeIsActive()) {
             if (isMotorProtocolDshot()) {

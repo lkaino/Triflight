@@ -51,6 +51,7 @@
 #include "flight/failsafe.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
+#include "flight/mixer_tricopter.h"
 #include "flight/navigation.h"
 #include "flight/pid.h"
 #include "flight/servos.h"
@@ -246,6 +247,7 @@ static const char * const lookupTableFailsafe[] = {
     "AUTO-LAND", "DROP"
 };
 
+
 static const char * const lookupTableBusType[] = {
     "NONE", "I2C", "SPI"
 };
@@ -253,6 +255,12 @@ static const char * const lookupTableBusType[] = {
 #ifdef USE_MAX7456
 static const char * const lookupTableMax7456Clock[] = {
     "HALF", "DEFAULT", "FULL"
+};
+#endif
+
+#ifdef USE_SERVOS
+static const char * const lookupServoFeedback[] = {
+    "VIRTUAL", "RSSI", "CURRENT", "EXT1"
 };
 #endif
 
@@ -304,6 +312,9 @@ const lookupTableEntry_t lookupTables[] = {
     { lookupTableBusType, sizeof(lookupTableBusType) / sizeof(char *) },
 #ifdef USE_MAX7456
     { lookupTableMax7456Clock, sizeof(lookupTableMax7456Clock) / sizeof(char *) },
+#endif
+#ifdef USE_SERVOS
+    { lookupServoFeedback, sizeof(lookupServoFeedback) / sizeof(char *) },
 #endif
 };
 
@@ -497,6 +508,19 @@ const clivalue_t valueTable[] = {
     { "servo_lowpass_hz",           VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, 400}, PG_SERVO_CONFIG, offsetof(servoConfig_t, servo_lowpass_freq) },
     { "tri_unarmed_servo",          VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_SERVO_CONFIG, offsetof(servoConfig_t, tri_unarmed_servo) },
     { "channel_forwarding_start",   VAR_UINT8  | MASTER_VALUE, .config.minmax = { AUX1, MAX_SUPPORTED_RC_CHANNEL_COUNT }, PG_SERVO_CONFIG, offsetof(servoConfig_t, channelForwardingStartChannel) },
+#endif
+
+// PG_TRICOPTER_CONFIG
+#ifdef USE_SERVOS
+    { "tri_unarmed_servo",          VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_TRICOPTER_CONFIG, offsetof(triMixerConfig_t, tri_unarmed_servo)  },
+    { "tri_tail_motor_thrustfactor",VAR_INT16  | MASTER_VALUE, .config.minmax = { TAIL_THRUST_FACTOR_MIN, TAIL_THRUST_FACTOR_MAX }, PG_TRICOPTER_CONFIG, offsetof(triMixerConfig_t, tri_tail_motor_thrustfactor),  },
+    { "tri_tail_servo_speed",       VAR_INT16  | MASTER_VALUE, .config.minmax = { 0, 1000 }, offsetof(triMixerConfig_t, tri_tail_servo_speed)},
+    { "tri_servo_feedback",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_SERVO_FEEDBACK }, offsetof(triMixerConfig_t, tri_servo_feedback)},
+    { "tri_motor_acc_yaw_correction",VAR_UINT16| MASTER_VALUE, .config.minmax = { 0, TRI_MOTOR_ACC_CORRECTION_MAX }, offsetof(triMixerConfig_t, tri_motor_acc_yaw_correction)},
+    { "tri_motor_acceleration",     VAR_UINT8  | MASTER_VALUE, .config.minmax = { 1, 100 }, offsetof(triMixerConfig_t, tri_motor_acceleration)},
+    { "tri_dynamic_yaw_minthrottle",VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, 500}, offsetof(triMixerConfig_t, tri_dynamic_yaw_minthrottle)},
+    { "tri_dynamic_yaw_maxthrottle",VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, 100}, offsetof(triMixerConfig_t, tri_dynamic_yaw_maxthrottle)},
+    { "tri_servo_max_angle",        VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, 50}, offsetof(triMixerConfig_t, tri_servo_angle_at_max)},
 #endif
 
 // PG_CONTROLRATE_PROFILES

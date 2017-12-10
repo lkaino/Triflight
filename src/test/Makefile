@@ -280,6 +280,10 @@ huffman_unittest_SRC := \
 
 huffman_unittest_DEFINES := \
 		USE_HUFFMAN
+		
+mixer_tricopter_unittest_SRC := \
+	$(USER_DIR)/flight/mixer_tricopter.c \
+	$(USER_DIR)/common/maths.c
 
 # Please tweak the following variable definitions as needed by your
 # project, except GTEST_HEADERS, which you can use in your own targets
@@ -298,10 +302,10 @@ OBJECT_DIR = ../../obj/test
 UNAME := $(shell uname -s)
 
 # Use clang/clang++ by default
-CC  := clang
-CXX := clang++
-#CC  := gcc
-#CXX := g++
+#CC  := clang
+#CXX := clang++
+CC  := gcc
+CXX := g++
 
 COMMON_FLAGS = \
 	-g \

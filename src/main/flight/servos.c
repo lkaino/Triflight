@@ -221,7 +221,7 @@ void servosInit(void)
         servo[i] = DEFAULT_SERVO_MIDDLE;
     }
 
-    triInitMixer(servoParams_array()[SERVO_RUDDER], &servo[SERVO_RUDDER]);
+    triInitMixer(servoParamsMutable(SERVO_RUDDER), &servo[SERVO_RUDDER]);
 }
 
 void loadCustomServoMixer(void)

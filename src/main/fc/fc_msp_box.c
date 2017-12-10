@@ -32,6 +32,7 @@
 #include "fc/runtime_config.h"
 
 #include "flight/mixer.h"
+#include "flight/mixer_tricopter.h"
 
 #include "sensors/sensors.h"
 
@@ -251,6 +252,10 @@ void initActiveBoxIds(void)
     BME(BOXCAMERA3);
 #endif
 
+    if (triMixerInUse())
+    {
+        BME(BOXTAILTUNE);
+    }
 #undef BME
     // check that all enabled IDs are in boxes array (check may be skipped when using findBoxById() functions)
     for (boxId_e boxId = 0;  boxId < CHECKBOX_ITEM_COUNT; boxId++)

@@ -96,7 +96,7 @@ STATIC_UNIT_TESTED uint16_t getLinearServoValue(servoParam_t *servoConf, float s
 static uint16_t getNormalServoValue(servoParam_t *servoConf, float constrainedPIDOutput, float pidSumLimit);
 static float virtualServoStep(float currentAngle, int16_t servoSpeed, float dT, servoParam_t *servoConf,
         uint16_t servoValue);
-static float feedbackServoStep(triMixerConfig_t *mixerConf, uint16_t tailServoADC);
+STATIC_UNIT_TESTED float feedbackServoStep(triMixerConfig_t *mixerConf, uint16_t tailServoADC);
 STATIC_UNIT_TESTED void tailTuneModeThrustTorque(thrustTorque_t *pTT, const bool isThrottleHigh);
 static void tailTuneModeServoSetup(struct servoSetup_t *pSS, servoParam_t *pServoConf, int16_t *pServoVal);
 static void triTailTuneStep(servoParam_t *pServoConf, int16_t *pServoVal);
@@ -194,8 +194,8 @@ static void initYawForceCurve(void)
         angle++;
     }
 
-    float minLinearAngle;
-    float maxLinearAngle;
+    float minLinearAngle = 0;
+    float maxLinearAngle = 0;
     if (ABS(maxPosForce) < ABS(maxNegForce)) {
         const float maxOutput = ABS(maxPosForce);
         maxLinearAngle = maxAngle;
@@ -239,6 +239,8 @@ static uint16_t getNormalServoValue(servoParam_t *servoConf, float constrainedPI
 void triServoMixer(float scaledYawPid, float pidSumLimit)
 {
     const float dT = getdT();
+
+    scaledYawPid = -scaledYawPid;
 
     // Update the tail motor speed from feedback
     tailMotorStep(motor[TRI_TAIL_MOTOR_INDEX], dT);
@@ -341,11 +343,11 @@ STATIC_UNIT_TESTED uint16_t getServoValueAtAngle(servoParam_t *servoConf, float 
         if (servoRange < 0) {
             const float servoMin = servoConf->min;
 
-            servoValue = servoMid - angleDiff * (servoMid - servoMin) / angleRange;
+            servoValue = (servoMid - angleDiff * (servoMid - servoMin) / angleRange + 0.5f);
         } else {
             const float servoMax = servoConf->max;
 
-            servoValue = lroundf(servoMid + angleDiff * (servoMax - servoMid) / angleRange);
+            servoValue = ((servoMid + angleDiff * (servoMax - servoMid) / angleRange) + 0.5f);
         }
     }
 
@@ -438,13 +440,13 @@ static float virtualServoStep(float currentAngle, int16_t servoSpeed, float dT, 
     return currentAngle;
 }
 
-static float feedbackServoStep(triMixerConfig_t *mixerConf, uint16_t tailServoADC)
+STATIC_UNIT_TESTED float feedbackServoStep(triMixerConfig_t *mixerConf, uint16_t tailServoADC)
 {
     // Feedback servo
     const int32_t ADCFeedback = tailServoADC;
     const int16_t midValue = mixerConf->tri_servo_mid_adc;
     const int16_t endValue = ADCFeedback < midValue ? mixerConf->tri_servo_min_adc : mixerConf->tri_servo_max_adc;
-    const float tailServoMaxAngle = tailServo.angleAtMax;
+    const float tailServoMaxAngle = mixerConf->tri_servo_angle_at_max;
     const float endAngle = ADCFeedback < midValue ?
             TRI_TAIL_SERVO_ANGLE_MID - tailServoMaxAngle : TRI_TAIL_SERVO_ANGLE_MID + tailServoMaxAngle;
     const float currentAngle = ((endAngle - TRI_TAIL_SERVO_ANGLE_MID) * (ADCFeedback - midValue)
@@ -657,7 +659,7 @@ static void tailTuneModeServoSetup(struct servoSetup_t *pSS, servoParam_t *pServ
                 pSS->cal.avg.pCalibConfig = &gpTriMixerConfig->tri_servo_min_adc;
             } else if (pSS->cal.state == SS_C_CALIB_SPEED) {
                 pSS->state = SS_IDLE;
-                pSS->cal.subState = SS_C_IDLE;
+                pSS->cal.subState = SS_C_MIN;
                 beeper(BEEPER_READY_BEEP);
                 // Speed calibration should be done as final step so this saves the min, mid, max and speed values.
                 saveConfigAndNotify();
@@ -674,7 +676,7 @@ static void tailTuneModeServoSetup(struct servoSetup_t *pSS, servoParam_t *pServ
                             // Not enough difference between min and mid feedback values.
                             // Most likely the feedback signal is not connected.
                             pSS->state = SS_IDLE;
-                            pSS->cal.subState = SS_C_IDLE;
+                            pSS->cal.subState = SS_C_MIN;
                             beeper(BEEPER_ACC_CALIBRATION_FAIL);
                             // Save configuration even after speed calibration failed.
                             // Speed calibration should be done as final step so this saves the min, mid and max values.
@@ -788,6 +790,7 @@ static void updateServoAngle(float dT)
         tailServo.feedbackHealthy = true;
         preventArming(TRI_ARMING_PREVENT_FLAG_INVALID_SERVO_ANGLE, false);
     }
+
     servo[6] = tailServo.angle * 10;
 }
 
@@ -867,6 +870,7 @@ static int8_t triGetServoDirection(void)
 {
     const int8_t direction = (int8_t) servoDirection(SERVO_RUDDER, INPUT_STABILIZED_YAW);
 
+    debug[0] = direction + 1;
     return direction;
 }
 

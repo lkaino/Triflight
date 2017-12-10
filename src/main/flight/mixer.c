@@ -96,7 +96,7 @@ void pgResetFn_motorConfig(motorConfig_t *motorConfig)
 
     int motorIndex = 0;
     for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT && motorIndex < MAX_SUPPORTED_MOTORS; i++) {
-        if ((timerHardware[i].usageFlags & TIM_USE_SERVO) && triMixerInUse()) {
+        if ((timerHardware[i].usageFlags & TIM_USE_SERVO)) {
             // This channel is used for servo on tricopter
         } else if (timerHardware[i].usageFlags & TIM_USE_MOTOR) {
             motorConfig->dev.ioTags[motorIndex] = timerHardware[i].tag;
@@ -704,6 +704,10 @@ void mixTable(uint8_t vbatPidCompensation)
     if (mixerConfig()->yaw_motors_reversed) {
         scaledAxisPidYaw = -scaledAxisPidYaw;
     }
+
+    scaledAxisPIDf[FD_ROLL] = scaledAxisPidRoll;
+    scaledAxisPIDf[FD_YAW] = scaledAxisPidYaw;
+    scaledAxisPIDf[FD_PITCH] = scaledAxisPidPitch;
 
     // Calculate voltage compensation
     const float vbatCompensationFactor = (vbatPidCompensation)  ? calculateVbatPidCompensation() : 1.0f;

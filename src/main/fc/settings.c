@@ -514,12 +514,12 @@ const clivalue_t valueTable[] = {
 #ifdef USE_SERVOS
     { "tri_unarmed_servo",          VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_TRICOPTER_CONFIG, offsetof(triMixerConfig_t, tri_unarmed_servo)  },
     { "tri_tail_motor_thrustfactor",VAR_INT16  | MASTER_VALUE, .config.minmax = { TAIL_THRUST_FACTOR_MIN, TAIL_THRUST_FACTOR_MAX }, PG_TRICOPTER_CONFIG, offsetof(triMixerConfig_t, tri_tail_motor_thrustfactor),  },
-    { "tri_tail_servo_speed",       VAR_INT16  | MASTER_VALUE, .config.minmax = { 0, 1000 }, offsetof(triMixerConfig_t, tri_tail_servo_speed)},
-    { "tri_servo_feedback",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_SERVO_FEEDBACK }, offsetof(triMixerConfig_t, tri_servo_feedback)},
-    { "tri_motor_acc_yaw_correction",VAR_UINT16| MASTER_VALUE, .config.minmax = { 0, TRI_MOTOR_ACC_CORRECTION_MAX }, offsetof(triMixerConfig_t, tri_motor_acc_yaw_correction)},
-    { "tri_motor_acceleration",     VAR_UINT8  | MASTER_VALUE, .config.minmax = { 1, 100 }, offsetof(triMixerConfig_t, tri_motor_acceleration)},
-    { "tri_dynamic_yaw_boost",      VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, 700}, offsetof(triMixerConfig_t, tri_yaw_boost)},
-    { "tri_servo_max_angle",        VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, 50}, offsetof(triMixerConfig_t, tri_servo_angle_at_max)},
+    { "tri_tail_servo_speed",       VAR_INT16  | MASTER_VALUE, .config.minmax = { 0, 1000 }, PG_TRICOPTER_CONFIG, offsetof(triMixerConfig_t, tri_tail_servo_speed)},
+    { "tri_servo_feedback",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_SERVO_FEEDBACK }, PG_TRICOPTER_CONFIG, offsetof(triMixerConfig_t, tri_servo_feedback)},
+    { "tri_motor_acc_yaw_correction",VAR_UINT16| MASTER_VALUE, .config.minmax = { 0, TRI_MOTOR_ACC_CORRECTION_MAX }, PG_TRICOPTER_CONFIG, offsetof(triMixerConfig_t, tri_motor_acc_yaw_correction)},
+    { "tri_motor_acceleration",     VAR_UINT8  | MASTER_VALUE, .config.minmax = { 1, 100 }, PG_TRICOPTER_CONFIG, offsetof(triMixerConfig_t, tri_motor_acceleration)},
+    { "tri_dynamic_yaw_boost",      VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, 700}, PG_TRICOPTER_CONFIG, offsetof(triMixerConfig_t, tri_yaw_boost)},
+    { "tri_servo_max_angle",        VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, 50}, PG_TRICOPTER_CONFIG, offsetof(triMixerConfig_t, tri_servo_angle_at_max)},
 #endif
 
 // PG_CONTROLRATE_PROFILES

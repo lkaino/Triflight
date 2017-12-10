@@ -24,13 +24,13 @@
 extern "C" {
 #include "build/debug.h"
 #include "platform.h"
-
+#include "common/maths.h"
 #include "fc/runtime_config.h"
 
 #include "common/axis.h"
 #include "common/filter.h"
+#include "config/parameter_group_ids.h"
 #include "drivers/sensor.h"
-#include "drivers/accgyro.h"
 
 #include "sensors/gyro.h"
 
@@ -40,19 +40,18 @@ extern "C" {
 
 #include "io/beeper.h"
 #include "fc/rc_controls.h"
+#include "fc/rc_modes.h"
 #include "rx/rx.h"
-#include "config/config_master.h"
 
 servoParam_t servoConf;
-mixerConfig_t mixerConfig;
-triMixerConfig_t triMixerConfig;
 tailTune_t tailTune;
 int16_t servo[MAX_SUPPORTED_SERVOS];
-controlRateConfig_t *currentControlRateProfile;
-int16_t motor[MAX_SUPPORTED_MOTORS];
+float motor[MAX_SUPPORTED_MOTORS];
 int16_t test_motorLow;
 int16_t test_motorHigh;
 int16_t test_motorRange;
+
+PG_REGISTER(mixerConfig_t, mixerConfig, PG_MIXER_CONFIG, 0);
 
 void tailTuneModeThrustTorque(thrustTorque_t *pTT, const bool isThrottleHigh);
 uint16_t getLinearServoValue(servoParam_t *servoConf, float scaledPIDOutput, float pidSumLimit);
@@ -60,6 +59,7 @@ float getAngleForYawOutput(float yawOutput);
 float binarySearchOutput(float yawOutput, float gain);
 uint16_t getServoValueAtAngle(servoParam_t *servoConf, float angle);
 float getServoAngle(servoParam_t *servoConf, uint16_t servoValue);
+float feedbackServoStep(triMixerConfig_t *mixerConf, uint16_t tailServoADC);
 }
 extern tailServo_t tailServo;
 extern tailMotor_t tailMotor;
@@ -68,7 +68,7 @@ extern tailMotor_t tailMotor;
 
 class ThrustFactorCalculationTest: public ::testing::Test {
     // We expect factor = 1 / tan(angle) (but adjusted for formats)
-    // Say we want triMixerConfig()->tri_tail_motor_thrustfactor to be 139, i.e. the factor should be 13.9
+    // Say we want triMixerConfigMutable()->tri_tail_motor_thrustfactor to be 139, i.e. the factor should be 13.9
     // angle = 1 / atan(factor), according to #25
     // adjust to decidegrees and multiply by servoAvgAngle.numOf
     // i.e. multiply by 3000, then round to integer
@@ -89,7 +89,7 @@ protected:
             servo[i] = DEFAULT_SERVO_MIDDLE;
         }
 
-        triMixerConfig()->tri_tail_motor_thrustfactor = 123; // so we can check it's unchanged on TT_FAIL
+        triMixerConfigMutable()->tri_tail_motor_thrustfactor = 123; // so we can check it's unchanged on TT_FAIL
         triInitMixer(&servoConf, &servo[5]);
         tailTune.mode = TT_MODE_THRUST_TORQUE;
         tailTune.tt.state = TT_WAIT_FOR_DISARM;
@@ -103,7 +103,7 @@ TEST_F(ThrustFactorCalculationTest, 139) {
     // and
     tailTuneModeThrustTorque(&tailTune.tt, true);
     // then
-    EXPECT_NEAR(139, triMixerConfig()->tri_tail_motor_thrustfactor, 1);
+    EXPECT_NEAR(139, triMixerConfigMutable()->tri_tail_motor_thrustfactor, 1);
     EXPECT_EQ(tailTune.tt.state, TT_DONE);
 }
 
@@ -113,7 +113,7 @@ TEST_F(ThrustFactorCalculationTest, 145) {
     // and
     tailTuneModeThrustTorque(&tailTune.tt, true);
     // then
-    EXPECT_NEAR(145, triMixerConfig()->tri_tail_motor_thrustfactor, 1);
+    EXPECT_NEAR(145, triMixerConfigMutable()->tri_tail_motor_thrustfactor, 1);
     EXPECT_EQ(tailTune.tt.state, TT_DONE);
 }
 
@@ -123,7 +123,7 @@ TEST_F(ThrustFactorCalculationTest, 125) {
     // and
     tailTuneModeThrustTorque(&tailTune.tt, true);
     // then
-    EXPECT_NEAR(125, triMixerConfig()->tri_tail_motor_thrustfactor, 1);
+    EXPECT_NEAR(125, triMixerConfigMutable()->tri_tail_motor_thrustfactor, 1);
     EXPECT_EQ(tailTune.tt.state, TT_DONE);
 }
 
@@ -133,7 +133,7 @@ TEST_F(ThrustFactorCalculationTest, 80) {
     // and
     tailTuneModeThrustTorque(&tailTune.tt, true);
     // then
-    EXPECT_NEAR(80, triMixerConfig()->tri_tail_motor_thrustfactor, 1);
+    EXPECT_NEAR(80, triMixerConfigMutable()->tri_tail_motor_thrustfactor, 1);
     EXPECT_EQ(tailTune.tt.state, TT_DONE);
 }
 
@@ -143,7 +143,7 @@ TEST_F(ThrustFactorCalculationTest, err90) {
     // and
     tailTuneModeThrustTorque(&tailTune.tt, true);
     // then
-    EXPECT_EQ(123, triMixerConfig()->tri_tail_motor_thrustfactor);
+    EXPECT_EQ(123, triMixerConfigMutable()->tri_tail_motor_thrustfactor);
     EXPECT_EQ(tailTune.tt.state, TT_FAIL);
 }
 
@@ -153,7 +153,7 @@ TEST_F(ThrustFactorCalculationTest, err130) {
     // and
     tailTuneModeThrustTorque(&tailTune.tt, true);
     // then
-    EXPECT_EQ(123, triMixerConfig()->tri_tail_motor_thrustfactor);
+    EXPECT_EQ(123, triMixerConfigMutable()->tri_tail_motor_thrustfactor);
     EXPECT_EQ(tailTune.tt.state, TT_FAIL);
 }
 
@@ -170,15 +170,15 @@ protected:
         servoConf.middle = DEFAULT_SERVO_MIDDLE;
         servoConf.rate = 100;
         servoConf.forwardFromChannel = CHANNEL_FORWARDING_DISABLED;
-        servoConf.angleAtMax = 40;
+        triMixerConfigMutable()->tri_servo_angle_at_max = 40;
 
         // give all servos a default command
         for (uint8_t i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
             servo[i] = DEFAULT_SERVO_MIDDLE;
         }
 
-        triMixerConfig()->tri_tail_motor_thrustfactor = 54;
-        triMixerConfig()->tri_yaw_boost = 240;
+        triMixerConfigMutable()->tri_tail_motor_thrustfactor = 54;
+        triMixerConfigMutable()->tri_yaw_boost = 240;
         triInitMixer(&servoConf, &servo[5]);
         tailTune.mode = TT_MODE_THRUST_TORQUE;
         tailTune.tt.state = TT_WAIT_FOR_DISARM;
@@ -205,7 +205,7 @@ protected:
 TEST_F(LinearOutputTest, getAngleForYawOutput_motor0_output0Percent) {
     tailMotor.virtualFeedBack = test_motorLow + test_motorRange * 0;
     float output = 0;
-    float angle = this->getYaw0Angle(triMixerConfig()->tri_tail_motor_thrustfactor / 10.0);
+    float angle = this->getYaw0Angle(triMixerConfigMutable()->tri_tail_motor_thrustfactor / 10.0);
     EXPECT_NEAR(angle, getAngleForYawOutput(output), 0.05);
     EXPECT_NEAR(71, tailServo.angleAtLinearMin, 0.05);
 }
@@ -338,6 +338,85 @@ TEST_F(LinearOutputTest, getLinearServoValue_accuracy) {
     EXPECT_EQ(1, newServoValue - servoValue);
 }
 
+class ServoCalibrationTest: public ::testing::Test {
+protected:
+    virtual void SetUp() {
+
+        test_motorLow = 48;
+        test_motorHigh = 2000;
+        test_motorRange = test_motorHigh - test_motorLow;
+        memset(&servoConf, 0, sizeof(servoConf));
+        servoConf.min = DEFAULT_SERVO_MIN;
+        servoConf.max = DEFAULT_SERVO_MAX;
+        servoConf.middle = DEFAULT_SERVO_MIDDLE;
+        servoConf.rate = 100;
+        servoConf.forwardFromChannel = CHANNEL_FORWARDING_DISABLED;
+        triMixerConfigMutable()->tri_servo_angle_at_max = 40;
+
+        // give all servos a default command
+        for (uint8_t i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
+            servo[i] = DEFAULT_SERVO_MIDDLE;
+        }
+
+        triMixerConfigMutable()->tri_tail_motor_thrustfactor = 54;
+        triMixerConfigMutable()->tri_yaw_boost = 240;
+        triInitMixer(&servoConf, &servo[5]);
+        tailTune.mode = TT_MODE_THRUST_TORQUE;
+        tailTune.tt.state = TT_WAIT_FOR_DISARM;
+        tailTune.tt.servoAvgAngle.numOf = 300;
+    }
+};
+
+TEST_F(ServoCalibrationTest, testMin) {
+    triMixerConfigMutable()->tri_servo_min_adc = 1000;
+    triMixerConfigMutable()->tri_servo_mid_adc = 2000;
+    triMixerConfigMutable()->tri_servo_max_adc = 3000;
+    triMixerConfig_t *pMixerConfig = triMixerConfigMutable();
+    const float angle = feedbackServoStep(pMixerConfig, 1000);
+    const float expectedAngle = TRI_TAIL_SERVO_ANGLE_MID - triMixerConfigMutable()->tri_servo_angle_at_max;
+    EXPECT_NEAR(angle, expectedAngle, 0.05);
+}
+
+TEST_F(ServoCalibrationTest, testMid) {
+    triMixerConfigMutable()->tri_servo_min_adc = 1000;
+    triMixerConfigMutable()->tri_servo_mid_adc = 2000;
+    triMixerConfigMutable()->tri_servo_max_adc = 3000;
+    triMixerConfig_t *pMixerConfig = triMixerConfigMutable();
+    const float angle = feedbackServoStep(pMixerConfig, 2000);
+    const float expectedAngle = TRI_TAIL_SERVO_ANGLE_MID;
+    EXPECT_NEAR(angle, expectedAngle, 0.05);
+}
+
+TEST_F(ServoCalibrationTest, testMax) {
+    triMixerConfigMutable()->tri_servo_min_adc = 1000;
+    triMixerConfigMutable()->tri_servo_mid_adc = 2000;
+    triMixerConfigMutable()->tri_servo_max_adc = 3000;
+    triMixerConfig_t *pMixerConfig = triMixerConfigMutable();
+    const float angle = feedbackServoStep(pMixerConfig, 3000);
+    const float expectedAngle = TRI_TAIL_SERVO_ANGLE_MID + triMixerConfigMutable()->tri_servo_angle_at_max;
+    EXPECT_NEAR(angle, expectedAngle, 0.05);
+}
+
+TEST_F(ServoCalibrationTest, test50) {
+    triMixerConfigMutable()->tri_servo_min_adc = 1000;
+    triMixerConfigMutable()->tri_servo_mid_adc = 2000;
+    triMixerConfigMutable()->tri_servo_max_adc = 3000;
+    triMixerConfig_t *pMixerConfig = triMixerConfigMutable();
+    const float angle = feedbackServoStep(pMixerConfig, 2000 + (3000 - 2000) / 2);
+    const float expectedAngle = TRI_TAIL_SERVO_ANGLE_MID + (triMixerConfigMutable()->tri_servo_angle_at_max / 2);
+    EXPECT_NEAR(angle, expectedAngle, 0.05);
+}
+
+TEST_F(ServoCalibrationTest, testMinus50) {
+    triMixerConfigMutable()->tri_servo_min_adc = 1000;
+    triMixerConfigMutable()->tri_servo_mid_adc = 2000;
+    triMixerConfigMutable()->tri_servo_max_adc = 3000;
+    triMixerConfig_t *pMixerConfig = triMixerConfigMutable();
+    const float angle = feedbackServoStep(pMixerConfig, 1000 + (2000 - 1000) / 2);
+    const float expectedAngle = TRI_TAIL_SERVO_ANGLE_MID - (triMixerConfigMutable()->tri_servo_angle_at_max / 2);
+    EXPECT_NEAR(angle, expectedAngle, 0.05);
+}
+
 //STUBS
 extern "C" {
 
@@ -346,12 +425,11 @@ extern "C" {
 
 float dT;
 uint8_t armingFlags;
-int16_t rcCommand[4];
+float rcCommand[4];
 uint32_t rcModeActivationMask;
 uint16_t flightModeFlags = 0;
 int16_t debug[DEBUG16_VALUE_COUNT];
 gyro_t gyro;
-master_t masterConfig;
 int32_t gyroADC[XYZ_AXIS_COUNT];
 //master_t masterConfig;
 bool airModeActive = true;
@@ -388,10 +466,7 @@ uint16_t enableFlightMode(flightModeFlags_e mask) {
     return 0;
 }
 
-throttleStatus_e calculateThrottleStatus(rxConfig_t *rxConfig,
-        uint16_t deadband3d_throttle) {
-    UNUSED(rxConfig);
-    UNUSED(deadband3d_throttle);
+throttleStatus_e calculateThrottleStatus() {
     return (throttleStatus_e) 0;
 }
 
@@ -454,6 +529,12 @@ uint16_t mixGetMotorOutputLow()
 uint16_t mixGetMotorOutputHigh()
 {
     return test_motorHigh;
+}
+
+bool IS_RC_MODE_ACTIVE(boxId_e boxId)
+{
+    UNUSED(boxId);
+    return true;
 }
 
 }
